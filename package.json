@@ -1,0 +1,21 @@
+{
+  "name": "cyba-assignment-musicbase-backend",
+  "version": "1.0.0",
+  "description": "Obligatory assignment - 2. semester - KEA",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "envvaults": "^1.0.4",
+    "express": "^4.18.2",
+    "mysql2": "^3.6.1"
+  }
+}
