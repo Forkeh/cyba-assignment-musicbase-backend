@@ -79,10 +79,10 @@ async function getAllAlbumsByArtistId(request, response) {
     `;
 
     connection.query(query, values, (error, results, fields) => {
-        if (error) {
-            console.log(error);
+        if (results.length) {
+            response.status(200).json(results);
         } else {
-            response.json(results)
+            response.status(404).json({ message: `Could not find albums with specified artist with ID: ${id}` });
         }
     })
 }
