@@ -12,8 +12,9 @@ async function getAllTracks(req, res) {
     connection.query(query, (err, results, fields) => {
         if (err) {
             console.log(err);
+            res.status(500);
         } else {
-            res.json(results);
+            res.status(200).json(results);
         }
     });
 }
@@ -34,8 +35,9 @@ async function getSingleTrack(req, res) {
     connection.query(query, values, (err, results, fields) => {
         if (err) {
             console.log(err);
+            res.status(500);
         } else {
-            res.json(results[0]);
+            res.status(200).json(results[0]);
         }
     });
 }

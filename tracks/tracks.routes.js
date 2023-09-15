@@ -16,8 +16,9 @@ trackRouter.post("/", async (req, res) => {
     connection.query(query, values, (err, results, fields) => {
         if (err) {
             console.log(err);
+            res.status(500);
         } else {
-            res.json(results);
+            res.status(201).json(results);
         }
     });
 });
