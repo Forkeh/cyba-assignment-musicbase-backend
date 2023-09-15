@@ -4,9 +4,13 @@ async function getAllArtists(request, response) {
     const query = "SELECT * FROM artists";
     connection.query(query, (error, results, fields) => {
         if (error) {
-            console.log(error);
+            response.status(500).json({ message: "Internal server error" });
         } else {
-            response.json(results);
+            if (!results) {
+                response.status(404).json({ message: "Could not find any artists"});
+            } else {
+                response.json(results);
+            }
         }
     });
 }
@@ -18,9 +22,13 @@ async function getSingleArtist(request, response) {
 
     connection.query(query, values, (error, results, fields) => {
         if (error) {
-            console.log(error);
+            response.status(500).json({ message: "Internal server error" });
         } else {
-            response.json(results[0])
+            if (!results) {
+                response.status(404).json({message: "Could not find artist by specified ID: " + id})
+            } else {
+                response.json(results[0])
+            }
         }
     })
 }
@@ -33,7 +41,7 @@ async function createArtist(request, response) {
 
     connection.query(query, values, (error, results, fields) => {
         if (error) {
-            console.log(error);
+            response.status(500).json({ message: "Internal server error" });
         } else {
             response.status(202).json(results);
         }
@@ -48,9 +56,9 @@ async function updateArtist(request, response) {
 
     connection.query(query, values, (error, results, fields) => {
         if (error) {
-            console.log(error);
+            response.status(500).json({ message: "Internal server error" });
         } else {
-            response.json(results);
+            response.status(200).json(results);
         }
     });
 }
@@ -62,7 +70,7 @@ async function deleteArtist(request, response) {
 
     connection.query(query, values, (error, results, fields) => {
         if (error) {
-            console.log(error);
+            response.status(500).json({ message: "Internal server error" });
         } else {
             response.status(204).json();
         }
@@ -79,10 +87,14 @@ async function getAllAlbumsByArtistId(request, response) {
     `;
 
     connection.query(query, values, (error, results, fields) => {
-        if (results.length) {
-            response.status(200).json(results);
+        if (error) {
+            response.status(500).json({ message: "Internal server error" });
         } else {
-            response.status(404).json({ message: `Could not find albums with specified artist with ID: ${id}` });
+            if (results.length) {
+                response.status(200).json(results);
+            } else {
+                response.status(404).json({ message: `Could not find albums with specified artist with ID: ${id}` });
+            }
         }
     })
 }
