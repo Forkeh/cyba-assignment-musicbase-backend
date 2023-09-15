@@ -8,4 +8,18 @@ trackRouter.get("/", getAllTracks);
 
 trackRouter.get("/:id", getSingleTrack);
 
+trackRouter.post("/", async (req, res) => {
+    const newTrack = req.body;
+    const query = `INSERT INTO tracks(title, duration) VALUES (?, ?)`;
+    const values = [newTrack.title, newTrack.duration];
+
+    connection.query(query, values, (err, results, fields) => {
+        if (err) {
+            console.log(err);
+        } else {
+            res.json(results);
+        }
+    });
+});
+
 export default trackRouter;
