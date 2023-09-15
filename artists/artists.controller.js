@@ -35,7 +35,7 @@ async function createArtist(request, response) {
         if (error) {
             console.log(error);
         } else {
-            response.json(results);
+            response.status(202).json(results);
         }
     });
 }
@@ -69,6 +69,24 @@ async function deleteArtist(request, response) {
     })
 }
 
+async function getAllAlbumsByArtistId(request, response) {
+    const id = request.params.id;
+    const values = [id];
+    const query = `SELECT albums.title AS 'title', albums.year_of_release AS 'yearOfRelease', albums.image AS 'image' FROM albums
+    INNER JOIN artists_albums ON albums.id = artists_albums.album_id
+    INNER JOIN artists ON artists_albums.artist_id = artists.id
+    WHERE artist_id = ?;
+    `;
+
+    connection.query(query, values, (error, results, fields) => {
+        if (error) {
+            console.log(error);
+        } else {
+            response.json(results)
+        }
+    })
+}
 
 
-export {getSingleArtist, getAllArtists, createArtist, updateArtist, deleteArtist}
+
+export {getSingleArtist, getAllArtists, createArtist, updateArtist, deleteArtist, getAllAlbumsByArtistId}
