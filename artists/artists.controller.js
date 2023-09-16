@@ -77,14 +77,16 @@ async function deleteArtist(request, response) {
     })
 }
 
-async function getAllAlbumsByArtistId(request, response) {
-    const id = request.params.id;
-    const values = [id];
-    const query = `SELECT albums.title AS 'title', albums.year_of_release AS 'yearOfRelease', albums.image AS 'image' FROM albums
+async function getAllAlbumsByArtistName(request, response) {
+    const searchValue = request.params.searchValue;
+    const values = [`%${searchValue}%`];
+    const query = `WITH previous_result AS (
+    SELECT id AS id FROM artists WHERE name LIKE '%Y%')
+    SELECT albums.title AS 'title', albums.year_of_release AS 'yearOfRelease', albums.image AS 'image', artists.name AS artist
+    FROM albums
     INNER JOIN artists_albums ON albums.id = artists_albums.album_id
     INNER JOIN artists ON artists_albums.artist_id = artists.id
-    WHERE artist_id = ?;
-    `;
+    INNER JOIN previous_result ON artists.id = previous_result.id;`;
 
     connection.query(query, values, (error, results, fields) => {
         if (error) {
@@ -101,4 +103,4 @@ async function getAllAlbumsByArtistId(request, response) {
 
 
 
-export {getSingleArtist, getAllArtists, createArtist, updateArtist, deleteArtist, getAllAlbumsByArtistId}
+export {getSingleArtist, getAllArtists, createArtist, updateArtist, deleteArtist, getAllAlbumsByArtistName}
