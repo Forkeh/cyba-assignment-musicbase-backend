@@ -118,4 +118,29 @@ async function deleteAlbum(request, response) {
     });
 }
 
-export { getAllAlbums, getSingleAlbum, createAlbum, updateAlbum, deleteAlbum, updateAlbumsArtistsTable };
+
+async function getAllTracksByAlbumID(request, response) {
+    const id = request.params.id;
+    const values = [id];
+    const query = `SELECT tracks.title AS 'title', tracks.duration AS 'duration' FROM tracks
+    INNER JOIN albums_tracks ON tracks.id = albums_tracks.track_id
+    INNER JOIN albums ON albums_tracks.album_id = albums.id
+    WHERE album_id = ?;
+    `;
+
+    connection.query(query, values, (error, results, fields) => {
+        if (error) {
+            response.status(500).json({ message: "Internal server error" });
+        } else {
+            if (results.length) {
+                response.status(200).json(results);
+            } else {
+                response.status(404).json({ message: `Could not find tracks with specified album with ID: ${id}` });
+            }
+        }
+    })
+} 
+
+
+export { getAllAlbums, getSingleAlbum, createAlbum, updateAlbum, deleteAlbum, updateAlbumsArtistsTable, getAllTracksByAlbumID };
+
