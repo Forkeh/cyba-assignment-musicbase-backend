@@ -14,6 +14,5 @@ app.listen(port, () => {
     console.log(`Server is running on ${port}`);
 });
 
-app.use("/artists", artistRouter);
 
-app.use("/albums", albumRouter);
+app.use("/", artistRouter, albumRouter)

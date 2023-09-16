@@ -1,17 +1,20 @@
 import express from "express";
 import connection from "../database/dbconfig.js";
-import { createArtist, deleteArtist, getAllArtists, getSingleArtist, updateArtist } from "./artists.controller.js";
+import { createArtist, deleteArtist, getAllAlbumsByArtistId, getAllArtists, getSingleArtist, updateArtist } from "./artists.controller.js";
 
 const artistRouter = express.Router();
 
-artistRouter.get("/", getAllArtists);
+artistRouter.get("/artists/", getAllArtists);
 
-artistRouter.get("/:id", getSingleArtist);
+artistRouter.get("/artists/:id", getSingleArtist);
 
-artistRouter.post("/", createArtist);
+artistRouter.post("/artists/", createArtist);
 
-artistRouter.put("/:id", updateArtist);
+artistRouter.put("/artists/:id", updateArtist);
 
-artistRouter.delete("/:id", deleteArtist);
+artistRouter.delete("/artists/:id", deleteArtist);
+
+//#7 branch - få alle albums fra en bestemt artist ud fra artistID
+artistRouter.get("/artists/:id/albums", getAllAlbumsByArtistId);
 
 export default artistRouter
