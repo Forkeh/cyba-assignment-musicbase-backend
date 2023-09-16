@@ -13,6 +13,8 @@ albumRouter.get("/albums/", getAllAlbums);
 
 albumRouter.get("/albums/:id", getSingleAlbum);
 
+albumRouter.get("/albums/:id/tracks", getAllTracksByAlbumID)
+
 albumRouter.post("/albums/", createAlbum);
 
 albumRouter.put("/albums/:id", updateAlbum);
