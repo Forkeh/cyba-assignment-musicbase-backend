@@ -9,7 +9,7 @@ async function getAllArtists(request, response) {
             if (!results) {
                 response.status(404).json({ message: "Could not find any artists"});
             } else {
-                response.json(results);
+                response.status(200).json(results);
             }
         }
     });
@@ -27,7 +27,7 @@ async function getSingleArtist(request, response) {
             if (!results) {
                 response.status(404).json({message: "Could not find artist by specified ID: " + id})
             } else {
-                response.json(results[0])
+                response.status(200).json(results[0]);
             }
         }
     })
@@ -43,7 +43,7 @@ async function createArtist(request, response) {
         if (error) {
             response.status(500).json({ message: "Internal server error" });
         } else {
-            response.status(202).json(results);
+            response.status(201).json(results);
         }
     });
 }
