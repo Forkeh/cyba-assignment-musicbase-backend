@@ -1,4 +1,5 @@
 import connection from "../database/dbconfig.js";
+import { getArtistsIDByName } from "../utils/utils.js";
 
 async function getAllAlbums(request, response) {
     const query = "SELECT * FROM albums";
@@ -34,35 +35,46 @@ async function getSingleAlbum(request, response) {
     });
 }
 
+
+
 async function createAlbum(request, response, next) {
+    //Request.body består af et objekt med følgende properties: title STRING, duration INT, artists STRING ARR, albums STRING ARR
     const newAlbum = request.body;
     const values = [newAlbum.title, newAlbum.year_of_release, newAlbum.image];
     const query = "INSERT INTO albums (title, year_of_release, image) VALUES (?,?,?)";
-    
+
+    if (!newAlbum.artists) {
+        response.status(400).json({ message: "Include artists" });
+    } else {
+        console.log(`Artists: ${newAlbum.artists}`);
+        request.body.artistsID = await getArtistsIDByName(newAlbum.artists);
+        console.log(request.body.artistsID);
+    }
+
     connection.query(query, values, (error, results, fields) => {
         if (error) {
             console.log("error1");
             response.status(500).json({ message: "Internal server error" });
         } else {
             request.body.albumID = results.insertId;
-            next()
-            return
+            next();
+            return;
         }
     });
 }
 
 async function updateAlbumsArtistsTable(request, response) {
     const query = `INSERT INTO artists_albums(artist_id, album_id) VALUES (?,?)`
-    const artistsArr = request.body.artists;
-    const values = [artistsArr[0], request.body.albumID];
+    const artistsIdArr = request.body.artistsID;
+    const values = [artistsIdArr[0], request.body.albumID];
     
     connection.query(query, values, (error, results, fields) => {
         if (error) {
             console.log("error2");
             response.status(500).json({ message: "Internal server error" });
         } else {
-            if (artistsArr.length > 1) {
-                request.body.artist = artistsArr.shift();
+            if (artistsIdArr.length > 1) {
+                request.body.artist = artistsIdArr.shift();
                 updateAlbumsArtistsTable(request, response);
             } else {
                 response.status(202).json(results);
