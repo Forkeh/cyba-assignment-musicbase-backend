@@ -108,7 +108,7 @@ async function searchArtists(request, response) {
 
     connection.query(query, values, (error, results, fields) => {
         if (error) {
-
+            response.status(500).json({ message: "Internal server error" });
         } else {
             if (results.length) {
                 response.status(200).json(results);
