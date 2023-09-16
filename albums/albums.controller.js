@@ -36,24 +36,17 @@ async function getSingleAlbum(request, response) {
 
 async function createAlbum(request, response, next) {
     const newAlbum = request.body;
-    
     const values = [newAlbum.title, newAlbum.year_of_release, newAlbum.image];
-    
     const query = "INSERT INTO albums (title, year_of_release, image) VALUES (?,?,?)";
-    
-    
-    
     
     connection.query(query, values, (error, results, fields) => {
         if (error) {
             console.log("error1");
             response.status(500).json({ message: "Internal server error" });
         } else {
-            
             request.body.albumID = results.insertId;
             next()
             return
-            // updateAlbumsArtistsTable(albumID, artistsArr);
         }
     });
 }
@@ -78,28 +71,6 @@ async function updateAlbumsArtistsTable(request, response) {
     })
 }
 
-// function updateAlbumsArtistsTable(albumID, artistsArr) {
-
-//     for(let i=0; i < artistsArr.length; i++) {
-
-    
-//     const query = `INSERT INTO artists_albums(artist_id, album_id) VALUES (?,?)`;
-
-//     const values = [artistsArr[i], albumID];
-
-//     connection.query(query, values, (error, results, fields) => {
-//         if (error) {
-//             response.status(500).json({ message: "Internal server error" });
-//         } else {
-//             if (i < artistsArr.length - 1) {
-//                 continue;
-//             }
-//             response.json(results)
-//         }
-//     });
-//     }
-    
-// }
 
 async function updateAlbum(request, response) {
     const updatedAlbum = request.body;
