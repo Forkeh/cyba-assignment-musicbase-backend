@@ -117,7 +117,7 @@ async function deleteTrack(req, res) {
 }
 
 async function createTrack(request, response, next) {
-    //Request.body består af et objekt med følgende properties: title STRING, duration INT, artists INT ARR, albums INT ARR
+    //Request.body består af et objekt med følgende properties: title STRING, duration INT, artists STRING ARR, albums STRING ARR
     const newTrack = request.body;
 
     if (!newTrack.artists || !newTrack.albums ) {
