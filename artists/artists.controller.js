@@ -101,6 +101,25 @@ async function getAllAlbumsByArtistName(request, response) {
     })
 }
 
+async function searchArtists(request, response) {
+    const searchValue = request.params.searchValue;
+    const query = `SELECT name, image FROM artists WHERE name LIKE ?`
+    const values = [`%${searchValue}%`]
+
+    connection.query(query, values, (error, results, fields) => {
+        if (error) {
+            response.status(500).json({ message: "Internal server error" });
+        } else {
+            if (results.length) {
+                response.status(200).json(results);
+            } else {
+                response.status(404).json({ message: `Could not find artists with specified search value: ${searchValue}` });
+            }
+        }
+    })
+}
 
 
-export {getSingleArtist, getAllArtists, createArtist, updateArtist, deleteArtist, getAllAlbumsByArtistName}
+
+export {getSingleArtist, getAllArtists, createArtist, updateArtist, deleteArtist, getAllAlbumsByArtistName, searchArtists }
+
