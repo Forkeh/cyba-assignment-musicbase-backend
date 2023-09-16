@@ -5,6 +5,7 @@ import {
     getAllAlbums,
     getSingleAlbum,
     updateAlbum,
+    updateAlbumsArtistsTable,
 } from "./albums.controller.js";
 
 const albumRouter = express.Router();
@@ -13,7 +14,7 @@ albumRouter.get("/albums/", getAllAlbums);
 
 albumRouter.get("/albums/:id", getSingleAlbum);
 
-albumRouter.post("/albums/", createAlbum);
+albumRouter.post("/albums/", createAlbum, updateAlbumsArtistsTable);
 
 albumRouter.put("/albums/:id", updateAlbum);
 
