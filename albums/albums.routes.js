@@ -1,32 +1,22 @@
 import express from "express";
-import connection from "../database/dbconfig.js";
+import {
+    createAlbum,
+    deleteAlbum,
+    getAllAlbums,
+    getSingleAlbum,
+    updateAlbum,
+} from "./albums.controller.js";
 
 const albumRouter = express.Router();
 
-albumRouter.get("/", async (request, response) => {
-    const query = "SELECT * FROM albums";
+albumRouter.get("/", getAllAlbums);
 
-    connection.query(query, (error, results, fields) => {
-        if (error) {
-            console.log(error);
-        } else {
-            response.json(results);
-        }
-    });
-});
+albumRouter.get("/:id", getSingleAlbum);
 
-albumRouter.get("/:id", async (request, response) => {
-    const id = request.params.id;
-    const query = "SELECT * FROM albums WHERE id = ?";
-    const values = [id];
+albumRouter.post("/", createAlbum);
 
-    connection.query(query, values, (error, results, fields) => {
-        if (error) {
-            console.log(error);
-        } else {
-            response.json(results);
-        }
-    });
-});
+albumRouter.put("/:id", updateAlbum);
+
+albumRouter.delete("/:id", deleteAlbum);
 
 export default albumRouter;
