@@ -74,7 +74,7 @@ async function updateAlbumsArtistsTable(request, response) {
             response.status(500).json({ message: "Internal server error" });
         } else {
             if (artistsIdArr.length > 1) {
-                request.body.artist = artistsIdArr.shift();
+                artistsIdArr.shift();
                 updateAlbumsArtistsTable(request, response);
             } else {
                 response.status(202).json(results);
