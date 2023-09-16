@@ -1,5 +1,6 @@
 import { query } from "express";
 import connection from "../database/dbconfig.js";
+import { getArtistsIDByName, getAlbumsIDByName } from "../utils/utils.js";
 
 async function getAllTracks(req, res) {
     const query = `SELECT tracks.title, tracks.duration, 
@@ -118,6 +119,19 @@ async function deleteTrack(req, res) {
 async function createTrack(request, response, next) {
     //Request.body består af et objekt med følgende properties: title STRING, duration INT, artists INT ARR, albums INT ARR
     const newTrack = request.body;
+
+    if (!newTrack.artists || !newTrack.albums ) {
+        response.status(400).json({ message: "Include artists and/or albums" });
+        return
+    } else {
+        console.log(`Artists: ${newTrack.artists}`);
+        console.log(`Albums: ${newTrack.albums}`);
+        request.body.artistsID = await getArtistsIDByName(newTrack.artists);
+        request.body.albumsID = await getAlbumsIDByName(newTrack.albums);
+        console.log(request.body.artistsID);
+        console.log(request.body.albumsID);
+    }
+
     const query = `INSERT INTO tracks(title, duration) VALUES (?, ?)`;
     const values = [newTrack.title, newTrack.duration];
 
@@ -134,7 +148,7 @@ async function createTrack(request, response, next) {
 
 async function CreateTrackInAlbumsTracks(request, response, next) {
     const trackID = request.body.trackID;
-    const albumsIdArr = request.body.albums;
+    const albumsIdArr = request.body.albumsID;
     const query = `INSERT INTO albums_tracks(album_id, track_id) VALUES (?,?)`;
     const values = [albumsIdArr[0], trackID];
 
@@ -155,7 +169,7 @@ async function CreateTrackInAlbumsTracks(request, response, next) {
 
 async function CreateTrackInArtistsTracks(request, response) {
     const trackID = request.body.trackID;
-    const artistsIdArr = request.body.artists;
+    const artistsIdArr = request.body.artistsID;
     const query = `INSERT INTO artists_tracks(artist_id, track_id) VALUES (?,?)`;
     const values = [artistsIdArr[0], trackID];
 
