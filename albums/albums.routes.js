@@ -4,6 +4,7 @@ import {
     deleteAlbum,
     getAllAlbums,
     getSingleAlbum,
+    searchAlbums,
     updateAlbum,
     updateAlbumsArtistsTable,
     getAllTracksByAlbumID
@@ -12,6 +13,8 @@ import {
 const albumRouter = express.Router();
 
 albumRouter.get("/albums/", getAllAlbums);
+
+albumRouter.get("/albums/search/:searchValue", searchAlbums)
 
 albumRouter.get("/albums/:id", getSingleAlbum);
 
