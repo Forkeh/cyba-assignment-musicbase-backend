@@ -104,7 +104,6 @@ async function deleteTrackFromArtistsTracks(req, res, next) {
 async function deleteTrack(req, res) {
     const id = req.params.id;
     const values = [id];
-
     const query = `DELETE FROM tracks WHERE id = ?`;
 
     connection.query(query, values, (err, results, fields) => {
@@ -112,6 +111,64 @@ async function deleteTrack(req, res) {
             res.status(500).json({ message: "Internal server error" });
         } else {
             res.status(204).json();
+        }
+    });
+}
+
+async function createTrack(request, response, next) {
+    //Request.body består af et objekt med følgende properties: title STRING, duration INT, artists INT ARR, albums INT ARR
+    const newTrack = request.body;
+    const query = `INSERT INTO tracks(title, duration) VALUES (?, ?)`;
+    const values = [newTrack.title, newTrack.duration];
+
+    connection.query(query, values, (error, results, fields) => {
+        if (error) {
+            response.status(500).json({ message: "Internal server error at createTrack" });
+        } else {
+            request.body.trackID = results.insertId;
+            next();
+            return;
+        }
+    });
+}
+
+async function CreateTrackInAlbumsTracks(request, response, next) {
+    const trackID = request.body.trackID;
+    const albumsIdArr = request.body.albums;
+    const query = `INSERT INTO albums_tracks(album_id, track_id) VALUES (?,?)`;
+    const values = [albumsIdArr[0], trackID];
+
+    connection.query(query, values, (error, results, fields) => {
+        if (error) {
+            response.status(500).json({ message: "Internal server error at middleware CreateTrackInAlbumsTracks" });
+        } else {
+            if (albumsIdArr.length > 1) {
+                albumsIdArr.shift();
+                CreateTrackInAlbumsTracks(request, response, next)
+            } else {
+                next();
+                return;
+            }
+        }
+    })
+}
+
+async function CreateTrackInArtistsTracks(request, response) {
+    const trackID = request.body.trackID;
+    const artistsIdArr = request.body.artists;
+    const query = `INSERT INTO artists_tracks(artist_id, track_id) VALUES (?,?)`;
+    const values = [artistsIdArr[0], trackID];
+
+    connection.query(query, values, (error, results, fields) => {
+        if (error) {
+            response.status(500).json({ message: "Internal server error at middleware CreateTrackInArtistsTracks" }); 
+        } else {
+            if (artistsIdArr.length > 1) {
+                artistsIdArr.shift();
+                CreateTrackInArtistsTracks(request, response);
+            } else {
+                response.status(204).json();
+            }
         }
     });
 }
@@ -142,4 +199,7 @@ export {
     deleteTrackFromArtistsTracks,
     updateTrack,
     searchTracks,
+    createTrack, 
+    CreateTrackInAlbumsTracks,
+    CreateTrackInArtistsTracks
 };
