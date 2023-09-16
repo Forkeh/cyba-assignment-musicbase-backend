@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import connection from "./database/dbconfig.js";
 import artistRouter from "./artists/artists.routes.js";
+import albumRouter from "./albums/albums.routes.js";
 import trackRouter from "./tracks/tracks.routes.js";
 
 const app = express();
@@ -14,6 +15,4 @@ app.listen(port, () => {
     console.log(`Server is running on ${port}`);
 });
 
-app.use("/artists", artistRouter);
-
-app.use("/tracks", trackRouter);
+app.use("/", artistRouter, albumRouter);
