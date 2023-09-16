@@ -16,6 +16,26 @@ async function getAllAlbums(request, response) {
     });
 }
 
+async function searchAlbums(request, response) {
+    const searchValue = request.params.searchValue;
+    console.log(searchValue);
+    const query = `SELECT title, year_of_release AS yearOfRelease, image FROM albums
+    WHERE title LIKE ?`;
+    const values = [`%${searchValue}%`];
+
+    connection.query(query, values, (error, results, fields) => {
+        if (error) {
+            response.status(500).json({ message: "Internal server error" });
+        } else {
+            if (!results) {
+                response.status(404).json({ message: "Could not find any albums" });
+            } else {
+                response.status(200).json(results);
+            }
+        }
+    })
+}
+
 async function getSingleAlbum(request, response) {
     const id = request.params.id;
     const query = "SELECT * FROM albums WHERE id = ?";
@@ -85,4 +105,4 @@ async function deleteAlbum(request, response) {
     });
 }
 
-export { getAllAlbums, getSingleAlbum, createAlbum, updateAlbum, deleteAlbum };
+export { getAllAlbums, getSingleAlbum, createAlbum, updateAlbum, deleteAlbum, searchAlbums };

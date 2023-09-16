@@ -4,12 +4,15 @@ import {
     deleteAlbum,
     getAllAlbums,
     getSingleAlbum,
+    searchAlbums,
     updateAlbum,
 } from "./albums.controller.js";
 
 const albumRouter = express.Router();
 
 albumRouter.get("/albums/", getAllAlbums);
+
+albumRouter.get("/albums/search/:searchValue", searchAlbums)
 
 albumRouter.get("/albums/:id", getSingleAlbum);
 
