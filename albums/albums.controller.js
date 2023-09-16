@@ -5,9 +5,13 @@ async function getAllAlbums(request, response) {
 
     connection.query(query, (error, results, fields) => {
         if (error) {
-            console.log(error);
+            response.status(500).json({ message: "Internal server error" });
         } else {
-            response.json(results);
+            if (!results) {
+                response.status(404).json({ message: "Could not find any albums" });
+            } else {
+                response.status(200).json(results);
+            }
         }
     });
 }
@@ -19,9 +23,13 @@ async function getSingleAlbum(request, response) {
 
     connection.query(query, values, (error, results, fields) => {
         if (error) {
-            console.log(error);
+            response.status(500).json({ message: "Internal server error" });
         } else {
-            response.json(results[0]);
+            if (!results[0]) {
+                response.status(404).json({ message: "Could not find album by specified ID: " + id });
+            } else {
+                response.status(200).json(results[0]);
+            }
         }
     });
 }
@@ -36,9 +44,9 @@ async function createAlbum(request, response) {
 
     connection.query(query, values, (error, results, fields) => {
         if (error) {
-            console.log(error);
+            response.status(500).json({ message: "Internal server error" });
         } else {
-            response.json(results);
+            response.status(201).json(results);
         }
     });
 }
@@ -57,9 +65,9 @@ async function updateAlbum(request, response) {
 
     connection.query(query, values, (error, results, fields) => {
         if (error) {
-            console.log(error);
+            response.status(500).json({ message: "Internal server error" });
         } else {
-            response.json(results);
+            response.status(200).json(results);
         }
     });
 }
@@ -70,9 +78,9 @@ async function deleteAlbum(request, response) {
 
     connection.query(query, [id], (error, results, fields) => {
         if (error) {
-            console.log(error);
+            response.status(500).json({ message: "Internal server error" });
         } else {
-            response.json(results);
+            response.status(204).json();
         }
     });
 }

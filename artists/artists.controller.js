@@ -24,8 +24,8 @@ async function getSingleArtist(request, response) {
         if (error) {
             response.status(500).json({ message: "Internal server error" });
         } else {
-            if (!results) {
-                response.status(404).json({message: "Could not find artist by specified ID: " + id})
+            if (!results[0]) {
+                response.status(404).json({ message: "Could not find artist by specified ID: " + id });
             } else {
                 response.status(200).json(results[0]);
             }

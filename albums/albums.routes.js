@@ -9,14 +9,14 @@ import {
 
 const albumRouter = express.Router();
 
-albumRouter.get("/", getAllAlbums);
+albumRouter.get("/albums/", getAllAlbums);
 
-albumRouter.get("/:id", getSingleAlbum);
+albumRouter.get("/albums/:id", getSingleAlbum);
 
-albumRouter.post("/", createAlbum);
+albumRouter.post("/albums/", createAlbum);
 
-albumRouter.put("/:id", updateAlbum);
+albumRouter.put("/albums/:id", updateAlbum);
 
-albumRouter.delete("/:id", deleteAlbum);
+albumRouter.delete("/albums/:id", deleteAlbum);
 
 export default albumRouter;

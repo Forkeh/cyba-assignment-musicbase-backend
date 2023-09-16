@@ -15,4 +15,4 @@ app.listen(port, () => {
 });
 
 
-app.use("/", artistRouter, albumRouter)
+app.use("/", artistRouter, albumRouter);
