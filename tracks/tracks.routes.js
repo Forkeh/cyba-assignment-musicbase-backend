@@ -1,26 +1,45 @@
 import express from "express";
 import connection from "../database/dbconfig.js";
-import { getAllTracks, getSingleTrack } from "./tracks.controllers.js";
+import {
+    deleteTrackFromAlbumsTracks,
+    deleteTrackFromArtistsTracks,
+    getAllTracks,
+    getSingleTrack,
+    deleteTrack,
+    updateTrack,
+    searchTracks,
+} from "./tracks.controllers.js";
 
 const trackRouter = express.Router();
 
-trackRouter.get("/", getAllTracks);
+trackRouter.get("/tracks", getAllTracks);
 
-trackRouter.get("/:id", getSingleTrack);
+trackRouter.get("/tracks/:id", getSingleTrack);
 
-trackRouter.post("/", async (req, res) => {
-    const newTrack = req.body;
-    const query = `INSERT INTO tracks(title, duration) VALUES (?, ?)`;
-    const values = [newTrack.title, newTrack.duration];
+trackRouter.get("/tracks/search/:searchValue", searchTracks);
 
-    connection.query(query, values, (err, results, fields) => {
-        if (err) {
-            console.log(err);
-            res.status(500);
-        } else {
-            res.status(201).json(results);
-        }
-    });
-});
+trackRouter.delete(
+    "/tracks/:id",
+    deleteTrackFromAlbumsTracks,
+    deleteTrackFromArtistsTracks,
+    deleteTrack
+);
+
+trackRouter.put("/tracks/:id", updateTrack);
+
+// trackRouter.post("/", async (req, res) => {
+//     const newTrack = req.body;
+//     const query = `INSERT INTO tracks(title, duration) VALUES (?, ?)`;
+//     const values = [newTrack.title, newTrack.duration];
+
+//     connection.query(query, values, (err, results, fields) => {
+//         if (err) {
+//             console.log(err);
+//             res.status(500);
+//         } else {
+//             res.status(201).json(results);
+//         }
+//     });
+// });
 
 export default trackRouter;
