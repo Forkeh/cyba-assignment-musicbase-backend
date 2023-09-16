@@ -142,5 +142,5 @@ async function getAllTracksByAlbumID(request, response) {
 } 
 
 
-export { getAllAlbums, getSingleAlbum, createAlbum, updateAlbum, deleteAlbum, updateAlbumsArtistsTable };
+export { getAllAlbums, getSingleAlbum, createAlbum, updateAlbum, deleteAlbum, updateAlbumsArtistsTable, getAllTracksByAlbumID };
 

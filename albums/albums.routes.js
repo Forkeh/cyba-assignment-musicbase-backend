@@ -6,6 +6,7 @@ import {
     getSingleAlbum,
     updateAlbum,
     updateAlbumsArtistsTable,
+    getAllTracksByAlbumID
 } from "./albums.controller.js";
 
 const albumRouter = express.Router();
