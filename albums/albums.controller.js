@@ -86,21 +86,19 @@ async function createAlbum(request, response, next) {
 async function updateAlbumsArtistsTable(request, response) {
     const query = `INSERT INTO artists_albums(artist_id, album_id) VALUES (?,?)`
     const artistsIdArr = request.body.artistsID;
-    const values = [artistsIdArr[0], request.body.albumID];
     
-    connection.query(query, values, (error, results, fields) => {
-        if (error) {
-            console.log("error2");
-            response.status(500).json({ message: "Internal server error" });
-        } else {
-            if (artistsIdArr.length > 1) {
-                artistsIdArr.shift();
-                updateAlbumsArtistsTable(request, response);
-            } else {
-                response.status(202).json(results);
-            }
-        }
-    })
+    for (const artistID of artistsIdArr) {
+        const values = [artistID, request.body.albumID];
+
+        connection.query(query, values, (error, results, fields) => {
+            if (error) {
+                console.log("error2");
+                response.status(500).json({ message: "Internal server error" });
+            } 
+        });
+    }
+    
+    response.status(204).json();
 }
 
 
