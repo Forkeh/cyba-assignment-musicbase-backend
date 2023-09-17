@@ -164,36 +164,72 @@ function CreateTrackInArtistsTracksHelper(artistsIdArr, trackID) {
     }
 }
 
+async function createArtistTracksHelper(request, response, next) {
+    const artistsIdArr = [];
+
+    for (const artist of request.body[0].albumArtists) {
+        const query = "SELECT id FROM artists WHERE name = ?";
+
+        connection.query(query, [artist], (error, results, fields) => {
+            if (error) {
+                response.status(500).json({ message: "Internal server error" });
+            } else if (!results[0].id) {
+                
+                    const createQuery = "INSERT INTO artists(name,image) VALUES (?,?)";
+                    const values = [artist, null];
+
+                    connection.query(createQuery, values, (error, results, fields) => {
+                        if (error) {
+                            response.status(500).json({ message: "Could not create artist" });
+                        } else {
+                            artistsIdArr.push(results.insertId);
+                        }
+                    });
+                
+            } else {
+                artistsIdArr.push(results.insertId)
+            }
+        });
+    }
+
+    request.body.trackArtistsID = artistsIdArr;
+}
+
 async function populateAlbum(request, response, next) {
     for (const track of request.body.tracksArr) {
-        request.body.trackArtistsID
-        const trackArtistsID = [];
+        // let trackArtistsID;
         
 
-        for (const artist of request.body[0].albumArtists) {
-            const query = "SELECT id FROM artists WHERE name = ?";
+        // for (const artist of track.artists) {
+        //     const query = "SELECT id FROM artists WHERE name = ?";
+        //     const artistValues = [artist]
+        //     console.log("Jeg er i artist loop");
+        //     console.log(artist);
+        //     connection.query(query, artistValues, (error, results, fields) => {
+        //         if (error) {
+        //             response.status(500).json({ message: "Internal server error" });
+        //         } else if (!results[0]) {
+        //             console.log("Jeg burde ikke komme her");
+        //             const createQuery = "INSERT INTO artists(name,image) VALUES (?,?)";
+        //             const values = [artist, null];
 
-            connection.query(query, [artist], (error, results, fields) => {
-                if (error) {
-                    response.status(500).json({ message: "Internal server error" });
-                } else {
-                    if (!results[0].id) {
-                        const createQuery = "INSERT INTO artists(name,image) VALUES (?,?)";
-                        const values = [artist, null];
+        //             connection.query(createQuery, values, (newError, newResults, newFields) => {
+        //                 if (newError) {
+        //                     response.status(500).json({ message: "Could not create artist" });
+        //                 } else {
+        //                     trackArtistsID = newResults.insertId;
+        //                     request.body.trackArtistsID.push(trackArtistsID);
+        //                 }
+        //             });
+        //         } else {
+        //             console.log("Jeg kommer i else");
+        //             request.body.trackArtistsID.push(results.insertId);
+        //         }
+        //     });
+        // }
 
-                        connection.query(createQuery, values, (error, results, fields) => {
-                            if (error) {
-                                response.status(500).json({ message: "Could not create artist" });
-                            } else {
-                                trackArtistsID.push(results.insertId);
-                            }
-                        });
-                    }
-                }
-            });
-        }
-
-        request.body.trackArtistsID = trackArtistsID;
+        await createArtistTracksHelper(request, response);
+        
 
         const trackQuery = `INSERT INTO tracks(title, duration) VALUES (?,?);`;
         const values = [track.title, track.duration];
@@ -203,8 +239,12 @@ async function populateAlbum(request, response, next) {
                 response.status(500).json({ message: "Internal server error creating track" });
             } else {
                 request.body.trackID = results.insertId;
+                console.log(request.body.trackID);
             }
         });
+
+        console.log("TRACKARTISTSID: " + request.body.trackArtistsID);
+        console.log("trackID på body: " + request.body.trackID);
 
         
         const query = `INSERT INTO albums_tracks(album_id, track_id) VALUES (?,?);`;
