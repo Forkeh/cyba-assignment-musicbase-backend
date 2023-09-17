@@ -150,41 +150,37 @@ async function CreateTrackInAlbumsTracks(request, response, next) {
     const trackID = request.body.trackID;
     const albumsIdArr = request.body.albumsID;
     const query = `INSERT INTO albums_tracks(album_id, track_id) VALUES (?,?)`;
-    const values = [albumsIdArr[0], trackID];
 
-    connection.query(query, values, (error, results, fields) => {
-        if (error) {
-            response.status(500).json({ message: "Internal server error at middleware CreateTrackInAlbumsTracks" });
-        } else {
-            if (albumsIdArr.length > 1) {
-                albumsIdArr.shift();
-                CreateTrackInAlbumsTracks(request, response, next)
-            } else {
-                next();
-                return;
+    for (const albumID of albumsIdArr) {
+        const values = [albumID, trackID];
+
+        connection.query(query, values, (error, results, fields) => {
+            if (error) {
+                response.status(500).json({ message: "Internal server error at middleware CreateTrackInAlbumsTracks" });
             }
-        }
-    })
+        });
+    }
+
+    next();
+    return;
 }
 
 async function CreateTrackInArtistsTracks(request, response) {
     const trackID = request.body.trackID;
     const artistsIdArr = request.body.artistsID;
     const query = `INSERT INTO artists_tracks(artist_id, track_id) VALUES (?,?)`;
-    const values = [artistsIdArr[0], trackID];
+    
+    for (const artistID of artistsIdArr) {
+        const values = [artistID, trackID];
 
-    connection.query(query, values, (error, results, fields) => {
-        if (error) {
-            response.status(500).json({ message: "Internal server error at middleware CreateTrackInArtistsTracks" }); 
-        } else {
-            if (artistsIdArr.length > 1) {
-                artistsIdArr.shift();
-                CreateTrackInArtistsTracks(request, response);
-            } else {
-                response.status(204).json();
+        connection.query(query, values, (error, results, fields) => {
+            if (error) {
+                response.status(500).json({ message: "Internal server error at middleware CreateTrackInArtistsTracks" });
             }
-        }
-    });
+        });
+    }
+
+    response.status(204).json();
 }
 
 //Update track
