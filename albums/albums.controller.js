@@ -58,7 +58,7 @@ async function getSingleAlbum(request, response) {
 
 
 async function createAlbum(request, response, next) {
-    //Request.body består af et objekt med følgende properties: title STRING, duration INT, artists STRING ARR, albums STRING ARR
+    //Request.body består af et objekt med følgende properties: title STRING, duration INT, artists STRING ARR
     const newAlbum = request.body;
     const values = [newAlbum.title, newAlbum.year_of_release, newAlbum.image];
     const query = "INSERT INTO albums (title, year_of_release, image) VALUES (?,?,?)";

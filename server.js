@@ -4,6 +4,7 @@ import connection from "./database/dbconfig.js";
 import artistRouter from "./artists/artists.routes.js";
 import albumRouter from "./albums/albums.routes.js";
 import trackRouter from "./tracks/tracks.routes.js";
+import { createFinishedAlbum } from "./utils/utils.js";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -14,5 +15,7 @@ app.use(cors());
 app.listen(port, () => {
     console.log(`Server is running on ${port}`);
 });
+
+app.post("/completeAlbum", createFinishedAlbum)
 
 app.use("/", trackRouter, albumRouter, artistRouter);
