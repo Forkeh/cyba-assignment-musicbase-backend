@@ -333,3 +333,7 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,windows,node,intellij,visualstudiocode
+/.idea/.gitignore
+/.idea/cyba-assignment-musicbase-backend.iml
+/.idea/modules.xml
+/.idea/vcs.xml

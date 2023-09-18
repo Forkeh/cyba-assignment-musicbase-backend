@@ -2,7 +2,7 @@ import connection from "../database/dbconfig.js";
 import { getArtistsIDByName } from "../utils/utils.js";
 
 async function getAllAlbums(request, response) {
-    const query = "SELECT * FROM albums";
+    const query = "SELECT Albums.title, Albums.year_of_release AS yearOfRelease, Albums.image FROM albums";
 
     connection.query(query, (error, results, fields) => {
         if (error) {
@@ -20,16 +20,31 @@ async function getAllAlbums(request, response) {
 async function searchAlbums(request, response) {
     const searchValue = request.params.searchValue;
     console.log(searchValue);
-    const query = `SELECT title, year_of_release AS yearOfRelease, image FROM albums
-    WHERE title LIKE ?`;
+    const query = `
+    SELECT
+    Albums.title,
+    Albums.year_of_release AS YearOfRelease,
+    Albums.image,
+    GROUP_CONCAT(DISTINCT Artists.name ORDER BY Artists.name ASC SEPARATOR ', ') AS Artists,
+    GROUP_CONCAT(DISTINCT Tracks.title ORDER BY Tracks.title ASC SEPARATOR ', ') AS TracksOnAlbum
+    FROM Albums
+    LEFT JOIN Artists_Albums ON Albums.id = Artists_Albums.album_id
+    LEFT JOIN Artists ON Artists_Albums.artist_id = Artists.id
+    LEFT JOIN Albums_Tracks ON Albums.id = Albums_Tracks.album_id
+    LEFT JOIN Tracks ON Albums_Tracks.track_id = Tracks.id
+    WHERE albums.title LIKE ?
+    GROUP BY Albums.title, Albums.year_of_release, Albums.image;
+    `;
     const values = [`%${searchValue}%`];
 
     connection.query(query, values, (error, results, fields) => {
         if (error) {
             response.status(500).json({ message: "Internal server error" });
         } else {
-            if (!results) {
-                response.status(404).json({ message: "Could not find any albums" });
+            console.log('album search results:')
+            console.log(results)
+            if (results.length === 0 || !results) {
+                response.status(404).json({ message: `Could not find any albums with the requested search value: ${searchValue}` });
             } else {
                 response.status(200).json(results);
             }
@@ -54,8 +69,6 @@ async function getSingleAlbum(request, response) {
         }
     });
 }
-
-
 
 async function createAlbum(request, response, next) {
     //Request.body består af et objekt med følgende properties: title STRING, duration INT, artists STRING ARR, albums STRING ARR
@@ -92,7 +105,6 @@ async function updateAlbumsArtistsTable(request, response) {
 
         connection.query(query, values, (error, results, fields) => {
             if (error) {
-                console.log("error2");
                 response.status(500).json({ message: "Internal server error" });
             } 
         });
@@ -100,7 +112,6 @@ async function updateAlbumsArtistsTable(request, response) {
     
     response.status(204).json();
 }
-
 
 async function updateAlbum(request, response) {
     const updatedAlbum = request.body;
@@ -136,8 +147,6 @@ async function deleteAlbum(request, response) {
     });
 }
 
-
-
 async function getAllTracksByAlbumID(request, response) {
     const id = request.params.id;
     const values = [id];
@@ -160,7 +169,13 @@ async function getAllTracksByAlbumID(request, response) {
     })
 } 
 
-
-export { getAllAlbums, getSingleAlbum, createAlbum, updateAlbum, deleteAlbum, updateAlbumsArtistsTable, getAllTracksByAlbumID, searchAlbums };
-
-
+export {
+    getAllAlbums,
+    getSingleAlbum,
+    createAlbum,
+    updateAlbum,
+    deleteAlbum,
+    updateAlbumsArtistsTable,
+    getAllTracksByAlbumID,
+    searchAlbums
+};

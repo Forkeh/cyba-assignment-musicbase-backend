@@ -9,13 +9,13 @@ async function getArtistsIDByName(artistNames) {
 
         connection.query(query, values, (error, results) => {
             if (error) {
+                // er vi sikre på at en eventuel fejl ikke bare skal returneres?
                 response.status(500).json({ message: "Error with getting artist ID" });
             } else {
                 artistIdArr.push(results[0].id);
             }
         });
     }
-
     return artistIdArr;
 }
 
@@ -28,13 +28,13 @@ async function getAlbumsIDByName(albumNames) {
 
         connection.query(query, values, (error, results) => {
             if (error) {
+                // er vi sikre på at en eventuel fejl ikke bare skal returneres?
                 response.status(500).json({ message: "Error with getting album ID" });
             } else {
                 albumsIdArr.push(results[0].id);
             }
         });
     }
-
     return albumsIdArr;
 }
 

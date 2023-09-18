@@ -1,17 +1,22 @@
-import { query } from "express";
 import connection from "../database/dbconfig.js";
-import { getArtistsIDByName, getAlbumsIDByName } from "../utils/utils.js";
+import {getAlbumsIDByName, getArtistsIDByName} from "../utils/utils.js";
 
-async function getAllTracks(req, res) {
-    const query = `SELECT tracks.title, tracks.duration, 
-    GROUP_CONCAT(artists.name ORDER BY artists.name ASC SEPARATOR ', ') AS artists
-    FROM tracks
-    INNER JOIN artists_tracks ON tracks.id = artists_tracks.track_id
-    INNER JOIN artists ON artists_tracks.artist_id = artists.id
-    GROUP BY tracks.title, tracks.duration;
+const getQuery = `
+SELECT
+    Tracks.title,
+    Tracks.duration,
+    GROUP_CONCAT(DISTINCT Artists.name ORDER BY Artists.name ASC SEPARATOR ', ') AS artists,
+    GROUP_CONCAT(DISTINCT Albums.title ORDER BY Albums.title ASC SEPARATOR ', ') AS albums
+    FROM Tracks
+    LEFT JOIN Artists_Tracks ON Tracks.id = Artists_Tracks.track_id
+    LEFT JOIN Artists ON Artists_Tracks.artist_id = Artists.id
+    LEFT JOIN Albums_Tracks ON Tracks.id = Albums_Tracks.track_id
+    LEFT JOIN Albums ON Albums_Tracks.album_id = Albums.id
+    GROUP BY Tracks.title, Tracks.duration;
     `;
 
-    connection.query(query, (err, results, fields) => {
+async function getAllTracks(req, res) {
+    connection.query(getQuery, (err, results, fields) => {
         if (err) {
             console.log(err);
             res.status(500).json({ message: "Internal server error" });
@@ -25,16 +30,7 @@ async function getSingleTrack(req, res) {
     const id = req.params.id;
     const values = [id];
 
-    const query = `SELECT tracks.title, tracks.duration, 
-    GROUP_CONCAT(artists.name ORDER BY artists.name ASC SEPARATOR ', ') AS artists
-    FROM tracks
-    INNER JOIN artists_tracks ON tracks.id = artists_tracks.track_id
-    INNER JOIN artists ON artists_tracks.artist_id = artists.id
-    WHERE tracks.id = ?
-    GROUP BY tracks.title, tracks.duration;
-    `;
-
-    connection.query(query, values, (err, results, fields) => {
+    connection.query(getQuery, values, (err, results, fields) => {
         if (err) {
             console.log(err);
             res.status(500).json({ message: "Internal server error" });
@@ -46,22 +42,27 @@ async function getSingleTrack(req, res) {
 
 async function searchTracks(req, res) {
     const searchValue = req.params.searchValue;
+    const query = `
+    SELECT
+    Tracks.title,
+    Tracks.duration,
+    GROUP_CONCAT(DISTINCT Artists.name ORDER BY Artists.name ASC SEPARATOR ', ') AS artists,
+    GROUP_CONCAT(DISTINCT Albums.title ORDER BY Albums.title ASC SEPARATOR ', ') AS albums
+    FROM Tracks
+    LEFT JOIN Artists_Tracks ON Tracks.id = Artists_Tracks.track_id
+    LEFT JOIN Artists ON Artists_Tracks.artist_id = Artists.id
+    LEFT JOIN Albums_Tracks ON Tracks.id = Albums_Tracks.track_id
+    LEFT JOIN Albums ON Albums_Tracks.album_id = Albums.id
+    WHERE Tracks.title LIKE ?
+    GROUP BY Tracks.title, Tracks.duration;
+    `;
     const values = [`%${searchValue}%`];
-
-    const query = `SELECT * FROM tracks WHERE title LIKE ?`;
-
     connection.query(query, values, (err, results, fields) => {
         if (err) {
             res.status(500).json({ message: "Internal server error" });
         } else {
-            //! Den kommer aldrig ned i 404. Tror heller ikke searchArtists() eller SearchAlbums() gør. FIX DET!
             if (results.length === 0) {
-                console.log("tomt array");
-                res.status(404).json({
-                    message:
-                        "Could not find any tracks with the requested search value: " +
-                        searchValue,
-                });
+                res.status(404).json({ message: `Could not find any tracks with the requested search value: ${searchValue}` });
             } else {
                 console.log("results");
                 res.status(200).json(results);
