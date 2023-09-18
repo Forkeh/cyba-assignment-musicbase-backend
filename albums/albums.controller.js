@@ -147,13 +147,23 @@ async function deleteAlbum(request, response) {
     });
 }
 
-async function getAllTracksByAlbumID(request, response) {
+async function getAllAlbumDataByAlbumID(request, response) {
     const id = request.params.id;
     const values = [id];
-    const query = `SELECT tracks.title AS 'title', tracks.duration AS 'duration' FROM tracks
-    INNER JOIN albums_tracks ON tracks.id = albums_tracks.track_id
-    INNER JOIN albums ON albums_tracks.album_id = albums.id
-    WHERE album_id = ?;
+    const query = `
+    SELECT
+    Albums.title,
+    Albums.year_of_release AS YearOfRelease,
+    Albums.image,
+    GROUP_CONCAT(DISTINCT Artists.name ORDER BY Artists.name ASC SEPARATOR ', ') AS ArtistsOnAlbum,
+    GROUP_CONCAT(DISTINCT Tracks.title ORDER BY Tracks.title ASC SEPARATOR ', ') AS TracksOnAlbum
+    FROM Albums
+    LEFT JOIN Albums_Tracks ON Albums.id = Albums_Tracks.album_id
+    LEFT JOIN Tracks ON Albums_Tracks.track_id = Tracks.id
+    LEFT JOIN Artists_Tracks ON Tracks.id = Artists_Tracks.track_id
+    LEFT JOIN Artists ON Artists_Tracks.artist_id = Artists.id
+    WHERE Albums.id = ?
+    GROUP BY Albums.title, Albums.year_of_release, Albums.image;
     `;
 
     connection.query(query, values, (error, results, fields) => {
@@ -176,6 +186,6 @@ export {
     updateAlbum,
     deleteAlbum,
     updateAlbumsArtistsTable,
-    getAllTracksByAlbumID,
+    getAllAlbumDataByAlbumID,
     searchAlbums
 };

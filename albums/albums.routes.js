@@ -7,7 +7,7 @@ import {
     searchAlbums,
     updateAlbum,
     updateAlbumsArtistsTable,
-    getAllTracksByAlbumID
+    getAllAlbumDataByAlbumID
 } from "./albums.controller.js";
 
 const albumRouter = express.Router();
@@ -15,7 +15,7 @@ const albumRouter = express.Router();
 albumRouter.get("/albums/", getAllAlbums);
 albumRouter.get("/albums/search/:searchValue", searchAlbums)
 albumRouter.get("/albums/:id", getSingleAlbum);
-albumRouter.get("/albums/:id/tracks", getAllTracksByAlbumID)
+albumRouter.get("/albums/:id/tracks", getAllAlbumDataByAlbumID)
 albumRouter.post("/albums/", createAlbum, updateAlbumsArtistsTable);
 albumRouter.put("/albums/:id", updateAlbum);
 albumRouter.delete("/albums/:id", deleteAlbum);
