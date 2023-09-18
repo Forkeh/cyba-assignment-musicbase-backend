@@ -13,4 +13,5 @@ artistRouter.delete("/artists/:id", deleteArtist);
 //#7 branch - få alle albums fra en bestemt artist ud fra et navn
 artistRouter.get("/artists/albums/:searchValue", getAllAlbumsByArtistName);
 
+
 export default artistRouter
