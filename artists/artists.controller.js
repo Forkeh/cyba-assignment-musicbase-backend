@@ -103,17 +103,30 @@ async function getAllAlbumsByArtistName(request, response) {
 
 async function searchArtists(request, response) {
     const searchValue = request.params.searchValue;
-    const query = `SELECT name, image FROM artists WHERE name LIKE ?`
+    const query = `
+    SELECT
+    Artists.name,
+    Artists.image,
+    GROUP_CONCAT(DISTINCT Albums.title ORDER BY Albums.title ASC SEPARATOR ', ') AS Albums,
+    GROUP_CONCAT(DISTINCT Tracks.title ORDER BY Tracks.title ASC SEPARATOR ', ') AS Tracks
+    FROM Artists
+    LEFT JOIN Artists_Albums ON Artists.id = Artists_Albums.artist_id
+    LEFT JOIN Albums ON Artists_Albums.album_id = Albums.id
+    LEFT JOIN Artists_Tracks ON Artists.id = Artists_Tracks.artist_id
+    LEFT JOIN Tracks ON Artists_Tracks.track_id = Tracks.id
+    WHERE name LIKE ?
+    GROUP BY Artists.name, Artists.image; 
+    `
     const values = [`%${searchValue}%`]
 
     connection.query(query, values, (error, results, fields) => {
         if (error) {
             response.status(500).json({ message: "Internal server error" });
         } else {
-            if (results.length) {
-                response.status(200).json(results);
-            } else {
+            if (results.length === 0 || !results) {
                 response.status(404).json({ message: `Could not find artists with specified search value: ${searchValue}` });
+            } else {
+                response.status(200).json(results);
             }
         }
     })
