@@ -52,7 +52,7 @@ async function searchAll(request, response) {
             console.log(error);
             response.status(500).json({ message: "Server error with searching all" });
         } else {
-            if (!results) {
+            if (results.length === 0 || !results) {
                 response.status(404).json({ message: "Could not find any match" });
             } else {
                 response.status(200).json(results);
