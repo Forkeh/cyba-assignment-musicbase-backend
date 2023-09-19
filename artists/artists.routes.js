@@ -11,7 +11,7 @@ artistRouter.put("/artists/:id", updateArtist);
 artistRouter.delete("/artists/:id", deleteArtist);
 
 //#7 branch - få alle albums fra en bestemt artist ud fra et navn
-artistRouter.get("/artists/albums/:searchValue", getAllAlbumsByArtistName);
+artistRouter.get("/artists/albums/:searchValue", getAllAlbumsByArtistName); //TODO - kig lige på sql query'et - det ser vildt ud :)
 
 
 export default artistRouter

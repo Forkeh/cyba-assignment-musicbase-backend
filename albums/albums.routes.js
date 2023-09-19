@@ -18,6 +18,6 @@ albumRouter.get("/albums/:id", getSingleAlbum);
 albumRouter.get("/albums/:id/tracks", getAllAlbumDataByAlbumID)
 albumRouter.post("/albums/", createAlbum, updateAlbumsArtistsTable);
 albumRouter.put("/albums/:id", updateAlbum);
-albumRouter.delete("/albums/:id", deleteAlbum);
+albumRouter.delete("/albums/:id", deleteAlbum); // fejler og giver 500 til postman ved test
 
 export default albumRouter;
