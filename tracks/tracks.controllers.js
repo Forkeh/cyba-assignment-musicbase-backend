@@ -1,5 +1,8 @@
 import connection from "../database/dbconfig.js";
-import {getAlbumsIDByName, getArtistsIDByName} from "../utils/utils.js";
+import { getAlbumsIDByName, getArtistsIDByName } from "../utils/utils.js";
+import { deleteFromTable } from "../utils/utils.js";
+
+
 async function getAllTracks(req, res) {
     try {
         const query = `
@@ -101,6 +104,7 @@ async function createTrack(request, response) {
     }
 }
 
+//TODO: lav iøvrigt createAlbumInTable (der skriver i junction-tables ligesom nedenstående)
 async function createTrackInTable(tableName, idColumnName, id, trackId, res) {
     try {
         const query = `INSERT INTO ${tableName}(${idColumnName}, track_id) VALUES (?, ?)`;
@@ -132,16 +136,6 @@ async function deleteTrack(req, res) {
     }
 }
 
-
-async function deleteFromTable(tableName, columnName, id, res) {
-    try {
-        const query = `DELETE FROM ${tableName} WHERE ${columnName} = ?`;
-        const values = [id];
-        await connection.query(query, values);
-    } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
-    }
-}
 
 //Update track
 async function updateTrack(req, res) {

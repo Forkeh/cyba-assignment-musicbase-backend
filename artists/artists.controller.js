@@ -45,6 +45,7 @@ async function createArtist(request, response) {
     }
 }
 
+
 async function updateArtist(request, response) {
     const id = request.params.id;
     const updatedArtist = request.body;
@@ -60,6 +61,7 @@ async function updateArtist(request, response) {
     });
 }
 
+//TODO: DER SKAL OGSÅ SLETTES I JUNCTION-TABLES!!
 async function deleteArtist(request, response) {
     try {
         const id = request.params.id;

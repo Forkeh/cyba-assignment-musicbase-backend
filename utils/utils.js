@@ -1,41 +1,5 @@
 import connection from "../database/dbconfig.js";
 
-// async function getArtistsIDByName(artistNames) {
-//     const artistIdArr = [];
-//
-//     for (const artistName of artistNames) {
-//         const query = `SELECT id FROM artists WHERE name = ?`;
-//         const values = [artistName];
-//
-//         await connection.execute(query, values, (error, results) => {
-//             if (error) {
-//                 return error
-//             } else {
-//                 artistIdArr.push(results[0].id);
-//             }
-//         });
-//     }
-//     return artistIdArr;
-// }
-//
-// async function getAlbumsIDByName(albumNames) {
-//     const albumsIdArr = [];
-//
-//     for (const albumName of albumNames) {
-//         const query = `SELECT id FROM albums WHERE title = ?`;
-//         const values = [albumName];
-//
-//         connection.query(query, values, (error, results) => {
-//             if (error) {
-//                 // er vi sikre på at en eventuel fejl ikke bare skal returneres?
-//                 response.status(500).json({ message: "Error with getting album ID" });
-//             } else {
-//                 albumsIdArr.push(results[0].id);
-//             }
-//         });
-//     }
-//     return albumsIdArr;
-// }
 
 async function getArtistsIDByName(artistNames) {
     const artistIdArr = [];
@@ -105,4 +69,14 @@ async function searchAll(request, response) {
     })
 }
 
-export { getAlbumsIDByName, getArtistsIDByName, searchAll };
+async function deleteFromTable(tableName, columnName, id, res) {
+    try {
+        const query = `DELETE FROM ${tableName} WHERE ${columnName} = ?`;
+        const values = [id];
+        await connection.query(query, values);
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export { getAlbumsIDByName, getArtistsIDByName, searchAll, deleteFromTable };

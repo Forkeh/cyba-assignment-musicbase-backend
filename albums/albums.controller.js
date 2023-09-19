@@ -61,31 +61,43 @@ async function searchAlbums(request, response) {
     }
 }
 
-async function createAlbum(request, response, next) {
-    //Request.body består af et objekt med følgende properties: title STRING, duration INT, artists STRING ARR, albums STRING ARR
-    const newAlbum = request.body;
-    const values = [newAlbum.title, newAlbum.year_of_release, newAlbum.image];
-    const query = "INSERT INTO albums (title, year_of_release, image) VALUES (?,?,?)";
+async function createAlbum(request, response) {
+    //Request.body består af et objekt med følgende properties: title STRING, yearOfRelease INT, image STRING, artists STRING ARR
+    const { title, yearOfRelease, image, artists } = request.body;
 
-    if (!newAlbum.artists) {
+    if (!artists) {
         response.status(400).json({ message: "Include artists" });
-    } else {
-        console.log(`Artists: ${newAlbum.artists}`);
-        request.body.artistsID = await getArtistsIDByName(newAlbum.artists);
-        console.log(request.body.artistsID);
     }
 
-    connection.query(query, values, (error, results, fields) => {
-        if (error) {
-            console.log("error1");
-            response.status(500).json({ message: "Internal server error" });
-        } else {
-            request.body.albumID = results.insertId;
-            next();
-            return;
-        }
-    });
+    try {
+        const values = [title, yearOfRelease, image];
+        const query = "INSERT INTO albums (title, year_of_release, image) VALUES (?,?,?)";
+
+        const [results, fields] = await connection.execute(query, values);
+        const albumID = results[0].insertId;
+
+        const artistIDArr = await getArtistsIDByName(artists);
+
+        await createAlbumInTable("artists_albums", "artist_id", artistIDArr, albumID, response);
+
+        response.status(201).json({ message: "Album created" });
+    } catch (error) {
+        response.status(500).json({ message: "Internal server error at createAlbum" });
+    }
 }
+
+async function createAlbumInTable(tableName, idColumnName, id, albumId, res) {
+    try {
+        const query = `INSERT INTO ${tableName}(${idColumnName}, album_id) VALUES (?, ?)`;
+        for (const itemID of id) {
+            const values = [itemID, albumId];
+            await connection.query(query, values);
+        }
+    } catch (error) {
+        res.status(500).json({ message: `Internal server error at CreateTrackIn${tableName}` });
+    }
+}
+
 
 async function updateAlbumsArtistsTable(request, response) {
     const query = `INSERT INTO artists_albums(artist_id, album_id) VALUES (?,?)`
