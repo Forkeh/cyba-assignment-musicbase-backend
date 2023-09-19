@@ -139,6 +139,8 @@ async function deleteAlbum(request, response) {
     }
 }
 
+
+//TODO: refactor to try-catch
 async function getAllAlbumDataByAlbumID(request, response) {
     const id = request.params.id;
     const values = [id];
