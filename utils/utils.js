@@ -1,5 +1,42 @@
 import connection from "../database/dbconfig.js";
 
+// async function getArtistsIDByName(artistNames) {
+//     const artistIdArr = [];
+//
+//     for (const artistName of artistNames) {
+//         const query = `SELECT id FROM artists WHERE name = ?`;
+//         const values = [artistName];
+//
+//         await connection.execute(query, values, (error, results) => {
+//             if (error) {
+//                 return error
+//             } else {
+//                 artistIdArr.push(results[0].id);
+//             }
+//         });
+//     }
+//     return artistIdArr;
+// }
+//
+// async function getAlbumsIDByName(albumNames) {
+//     const albumsIdArr = [];
+//
+//     for (const albumName of albumNames) {
+//         const query = `SELECT id FROM albums WHERE title = ?`;
+//         const values = [albumName];
+//
+//         connection.query(query, values, (error, results) => {
+//             if (error) {
+//                 // er vi sikre på at en eventuel fejl ikke bare skal returneres?
+//                 response.status(500).json({ message: "Error with getting album ID" });
+//             } else {
+//                 albumsIdArr.push(results[0].id);
+//             }
+//         });
+//     }
+//     return albumsIdArr;
+// }
+
 async function getArtistsIDByName(artistNames) {
     const artistIdArr = [];
 
@@ -7,14 +44,17 @@ async function getArtistsIDByName(artistNames) {
         const query = `SELECT id FROM artists WHERE name = ?`;
         const values = [artistName];
 
-        connection.query(query, values, (error, results) => {
-            if (error) {
-                // er vi sikre på at en eventuel fejl ikke bare skal returneres?
-                response.status(500).json({ message: "Error with getting artist ID" });
-            } else {
-                artistIdArr.push(results[0].id);
+        try {
+            const [rows, fields] = await connection.execute(query, values);
+            if (rows.length > 0) {
+                artistIdArr.push(rows[0].id);
             }
-        });
+        } catch (error) {
+            // Handle the error here if needed
+            console.error(`Error getting artist ID for ${artistName}: ${error.message}`);
+            // You might want to throw the error or handle it accordingly
+            throw error;
+        }
     }
     return artistIdArr;
 }
@@ -26,17 +66,21 @@ async function getAlbumsIDByName(albumNames) {
         const query = `SELECT id FROM albums WHERE title = ?`;
         const values = [albumName];
 
-        connection.query(query, values, (error, results) => {
-            if (error) {
-                // er vi sikre på at en eventuel fejl ikke bare skal returneres?
-                response.status(500).json({ message: "Error with getting album ID" });
-            } else {
-                albumsIdArr.push(results[0].id);
+        try {
+            const [rows, fields] = await connection.execute(query, values);
+            if (rows.length > 0) {
+                albumsIdArr.push(rows[0].id);
             }
-        });
+        } catch (error) {
+            // Handle the error here if needed
+            console.error(`Error getting album ID for ${albumName}: ${error.message}`);
+            // You might want to throw the error or handle it accordingly
+            throw error;
+        }
     }
     return albumsIdArr;
 }
+
 
 async function searchAll(request, response) {
     const searchValue = request.params.searchValue;
