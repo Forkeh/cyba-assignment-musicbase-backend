@@ -1,5 +1,5 @@
 import connection from "../database/dbconfig.js";
-import { getArtistsIDByName } from "../utils/utils.js";
+import { deleteFromTable, getArtistsIDByName } from "../utils/utils.js";
 
 async function getAllAlbums(request, response) {
     try {
@@ -67,22 +67,31 @@ async function createAlbum(request, response) {
 
     if (!artists) {
         response.status(400).json({ message: "Include artists" });
-    }
+    } 
 
     try {
         const values = [title, yearOfRelease, image];
-        const query = "INSERT INTO albums (title, year_of_release, image) VALUES (?,?,?)";
-
-        const [results, fields] = await connection.execute(query, values);
+        const query = "INSERT INTO albums(title, year_of_release, image) VALUES (?,?,?)";
+        const results = await connection.execute(query, values);
         const albumID = results[0].insertId;
 
         const artistIDArr = await getArtistsIDByName(artists);
+        console.log(artistIDArr);
+
+        if (artistIDArr.length === 0) {
+            throw new Error("artist not found");
+        }
 
         await createAlbumInTable("artists_albums", "artist_id", artistIDArr, albumID, response);
 
         response.status(201).json({ message: "Album created" });
     } catch (error) {
-        response.status(500).json({ message: "Internal server error at createAlbum" });
+
+        if (error.message) {
+            response.status(400).json({ message: `${error.message}` });
+        } else {
+            response.status(500).json({ message: "Internal server error at createAlbum" });
+        }
     }
 }
 
@@ -96,24 +105,6 @@ async function createAlbumInTable(tableName, idColumnName, id, albumId, res) {
     } catch (error) {
         res.status(500).json({ message: `Internal server error at CreateTrackIn${tableName}` });
     }
-}
-
-
-async function updateAlbumsArtistsTable(request, response) {
-    const query = `INSERT INTO artists_albums(artist_id, album_id) VALUES (?,?)`
-    const artistsIdArr = request.body.artistsID;
-    
-    for (const artistID of artistsIdArr) {
-        const values = [artistID, request.body.albumID];
-
-        connection.query(query, values, (error, results, fields) => {
-            if (error) {
-                response.status(500).json({ message: "Internal server error" });
-            } 
-        });
-    }
-    
-    response.status(204).json();
 }
 
 async function updateAlbum(request, response) {
@@ -134,16 +125,18 @@ async function updateAlbum(request, response) {
 }
 
 async function deleteAlbum(request, response) {
-    const id = request.params.id;
-    const query = "DELETE FROM albums WHERE id = ?";
+    const albumID = request.params.id;
+    
+    try {
+        // Delete associations with artists
+        await deleteFromTable("artists_albums", "album_id", albumID, response);
+        const query = "DELETE FROM albums WHERE id = ?";
+        await connection.execute(query, [albumID]);
 
-    connection.query(query, [id], (error, results, fields) => {
-        if (error) {
-            response.status(500).json({ message: "Internal server error" });
-        } else {
-            response.status(204).json();
-        }
-    });
+        response.status(204).json();
+    } catch (error) {
+        response.status(500).json({ message: "Internal server error in deleteAlbum" });
+    }
 }
 
 async function getAllAlbumDataByAlbumID(request, response) {
@@ -184,7 +177,6 @@ export {
     createAlbum,
     updateAlbum,
     deleteAlbum,
-    updateAlbumsArtistsTable,
     getAllAlbumDataByAlbumID,
     searchAlbums
 };

@@ -6,7 +6,6 @@ import {
     getSingleAlbum,
     searchAlbums,
     updateAlbum,
-    updateAlbumsArtistsTable,
     getAllAlbumDataByAlbumID
 } from "./albums.controller.js";
 

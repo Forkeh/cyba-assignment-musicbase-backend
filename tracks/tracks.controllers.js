@@ -76,35 +76,46 @@ async function searchTracks(req, res) {
 }
 
 async function createTrack(request, response) {
-    const {artists, albums, title, duration} = request.body;
+    //request.body indeholder title STRING, duration INT, artists STRING ARR, albums STRING ARR
+    const {title, duration, artists, albums} = request.body;
 
-    if (!artists || !albums) {
+    if (!artists || artists.length === 0 || !albums || albums.length === 0) {
         response.status(400).json({ message: "Include artists and/or albums" });
-        return;
     }
 
     try {
-        // Create the track in the "tracks" table
-        const query = `INSERT INTO tracks(title, duration) VALUES (?, ?)`;
-        const values = [title, duration];
-        const result = await connection.execute(query, values);
-        const trackId = result[0].insertId;
-
         // Associate the track with artists and albums
         const artistsId = await getArtistsIDByName(artists);
         const albumsId = await getAlbumsIDByName(albums);
+
+        //Throw error if artists or albums do not exist in database
+        if (artistsId.length === 0) {
+            throw new Error("Artist not found");
+        } else if (albumsId.length === 0) {
+            throw new Error("Album not found");
+        }
+
+        // Create the track in the "tracks" table
+        const query = `INSERT INTO tracks(title, duration) VALUES (?,?)`;
+        const values = [title, duration];
+        const result = await connection.execute(query, values);
+        const trackId = result[0].insertId;
 
         // Call the function to create associations
         await createTrackInTable("artists_tracks", "artist_id", artistsId, trackId, response);
         await createTrackInTable("albums_tracks", "album_id", albumsId, trackId, response);
 
-        response.status(201).json({ message: "Track created"});
+        response.status(201).json({ message: "Track created" });
     } catch (error) {
-        response.status(500).json({ message: "Internal server error at createTrack" });
+
+        if (error.message) {
+            response.status(400).json({ message: `${error.message}` });
+        } else {
+            response.status(500).json({ message: "Internal server error at createTrack" });
+        }
     }
 }
 
-//TODO: lav iøvrigt createAlbumInTable (der skriver i junction-tables ligesom nedenstående)
 async function createTrackInTable(tableName, idColumnName, id, trackId, res) {
     try {
         const query = `INSERT INTO ${tableName}(${idColumnName}, track_id) VALUES (?, ?)`;
