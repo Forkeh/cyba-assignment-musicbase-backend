@@ -30,7 +30,7 @@ async function createAllAtOnce(req, res) {
 }
 
 // utils
-async function createArtist(artist) {
+async function createArtistAsync(artist) {
     try {
         const { name, image } = artist;
 
@@ -61,7 +61,7 @@ async function getArtistIDs(artists) {
             const artistID = await getArtistsIDByName(artist);
             artistsIdsArr.push(artistID);
         } else if (typeof artist === "object") {
-            const artistID = await createArtist(artist);
+            const artistID = await createArtistAsync(artist);
             artistsIdsArr.push(artistID);
         } else {
             throw new Error("artist is not a string or an object");
@@ -178,4 +178,4 @@ async function validateIfTrackExists(track) {
     return null;
 }
 
-export { createAllAtOnce };
+export { createAllAtOnce, createArtistAsync };
