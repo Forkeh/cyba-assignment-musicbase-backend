@@ -2,11 +2,6 @@ import {getArtistsIDByName} from "./utils.js";
 import connection from "../database/dbconfig.js";
 
 async function createAllAtOnce(req, res) {
-    // modtager to arrays og et album:
-    // artists[ string | object]
-    // album: object
-    // tracks[string | object]
-
     let {artists, album, tracks} = req.body;
     if (!artists || artists.length === 0 || !album || !tracks || tracks.length === 0) {
         res.status(400).json({ message: 'artists, album or tracks are missing' });
@@ -121,8 +116,8 @@ async function createArtist(artist) {
         const query = "INSERT INTO artists(name, image) VALUES (?, ?)";
         const values = [name, image];
         const results = await connection.execute(query, values);
-
-        if (results.affectedRows > 0) {
+        console.log(results)
+        if (results[0].affectedRows > 0) {
             return results.insertId;
         } else {
             throw new Error("Failed to create artist");
@@ -135,7 +130,6 @@ async function createArtist(artist) {
     }
 }
 
-//TODO: REFACTOR FRA req, res TIL return og throw error osv
 async function createAlbum(album) {
     const { title, yearOfRelease, image, artistIDArr } = album;
 
@@ -186,3 +180,5 @@ async function createTrackInTable(tableName, idColumnName, id, trackId) {
         return { error: `Could not create junction table for track in ${tableName}` };
     }
 }
+
+export {createAllAtOnce};
