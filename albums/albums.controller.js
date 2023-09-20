@@ -141,38 +141,36 @@ async function deleteAlbum(request, response) {
 }
 
 
-//TODO: refactor to try-catch
+//TODO: refactor to something more similar to RACEs example
 async function getAllAlbumDataByAlbumID(request, response) {
-    const id = request.params.id;
-    const values = [id];
-    const query = `
-    SELECT
-    Albums.title,
-    Albums.year_of_release AS YearOfRelease,
-    Albums.image,
-    GROUP_CONCAT(DISTINCT Artists.name ORDER BY Artists.name ASC SEPARATOR ', ') AS ArtistsOnAlbum,
-    GROUP_CONCAT(DISTINCT Tracks.title ORDER BY Tracks.title ASC SEPARATOR ', ') AS TracksOnAlbum
-    FROM Albums
-    LEFT JOIN Albums_Tracks ON Albums.id = Albums_Tracks.album_id
-    LEFT JOIN Tracks ON Albums_Tracks.track_id = Tracks.id
-    LEFT JOIN Artists_Tracks ON Tracks.id = Artists_Tracks.track_id
-    LEFT JOIN Artists ON Artists_Tracks.artist_id = Artists.id
-    WHERE Albums.id = ?
-    GROUP BY Albums.title, Albums.year_of_release, Albums.image;
-    `;
-
-    connection.query(query, values, (error, results, fields) => {
-        if (error) {
-            response.status(500).json({ message: "Internal server error" });
-        } else {
-            if (results.length) {
-                response.status(200).json(results);
+    try {
+        const id = request.params.id;
+        const values = [id];
+        const query = `
+        SELECT
+        Albums.title,
+        Albums.year_of_release AS YearOfRelease,
+        Albums.image,
+        GROUP_CONCAT(DISTINCT Artists.name ORDER BY Artists.name ASC SEPARATOR ', ') AS ArtistsOnAlbum,
+        GROUP_CONCAT(DISTINCT Tracks.title ORDER BY Tracks.title ASC SEPARATOR ', ') AS TracksOnAlbum
+        FROM Albums
+        LEFT JOIN Albums_Tracks ON Albums.id = Albums_Tracks.album_id
+        LEFT JOIN Tracks ON Albums_Tracks.track_id = Tracks.id
+        LEFT JOIN Artists_Tracks ON Tracks.id = Artists_Tracks.track_id
+        LEFT JOIN Artists ON Artists_Tracks.artist_id = Artists.id
+        WHERE Albums.id = ?
+        GROUP BY Albums.title, Albums.year_of_release, Albums.image;
+        `;
+        const [results, fields] = await connection.execute(query, values);
+            if (results.length === 0 || !results) {
+                response.status(404).json({ message: `Could not find album by specified ID: ${id}` });
             } else {
-                response.status(404).json({ message: `Could not find tracks with specified album with ID: ${id}` });
+                response.status(200).json(results);
             }
-        }
-    })
-} 
+    } catch (error) {
+        response.status(500).json({ message: "Internal server error" });
+    }
+}
 
 export {
     getAllAlbums,
