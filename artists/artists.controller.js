@@ -1,4 +1,5 @@
 import connection from "../database/dbconfig.js";
+import {createArtistAsync} from "../utils/createEverything.js";
 
 async function getAllArtists(request, response) {
     try {
@@ -29,16 +30,31 @@ async function getSingleArtist(request, response) {
     }
 }
 
-async function createArtist(request, response) {
+// async function createArtist(request, response) {
+//     try {
+//         const {name, image} = request.body;
+//         const query = "INSERT INTO artists(name, image) VALUES (?,?)";
+//         const values = [name, image];
+//         const [results, fields] = await connection.execute(query, values);
+//         if (results.length === 0 || !results) {
+//             response.status(404).json({ message: `Could not create artist` });
+//         } else {
+//             response.status(201).json(results[0].insertId);
+//         }
+//     } catch (error) {
+//         response.status(500).json({ message: "Internal server error" });
+//     }
+// }
+
+async function createArtistEndpoint(request, response) {
     try {
-        const {name, image} = request.body;
-        const query = "INSERT INTO artists(name, image) VALUES (?,?)";
-        const values = [name, image];
-        const [results, fields] = await connection.execute(query, values);
-        if (results.length === 0 || !results) {
-            response.status(404).json({ message: `Could not create artist` });
+        const artist = request.body;
+        const artistId = await createArtistAsync(artist);
+
+        if (artistId) {
+            response.status(201).json(artistId);
         } else {
-            response.status(201).json(results[0].insertId);
+            response.status(404).json({ message: "Could not create artist" });
         }
     } catch (error) {
         response.status(500).json({ message: "Internal server error" });
@@ -136,5 +152,5 @@ async function searchArtists(request, response) {
 
 
 
-export {getSingleArtist, getAllArtists, createArtist, updateArtist, deleteArtist, getAllAlbumsByArtistName, searchArtists }
+export {getSingleArtist, getAllArtists, createArtistEndpoint, updateArtist, deleteArtist, getAllAlbumsByArtistName, searchArtists }
 
