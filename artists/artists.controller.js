@@ -1,5 +1,6 @@
 import connection from "../database/dbconfig.js";
 import {createArtistAsync} from "../utils/createEverything.js";
+import {deleteFromTable} from "../utils/utils.js";
 
 async function getAllArtists(request, response) {
     try {
@@ -63,24 +64,30 @@ async function createArtistEndpoint(request, response) {
 
 
 async function updateArtist(request, response) {
-    const id = request.params.id;
-    const updatedArtist = request.body;
-    const query = "UPDATE artists SET name = ?, image = ? WHERE id = ?";
-    const values = [updatedArtist.name, updatedArtist.image, id];
-
-    connection.query(query, values, (error, results, fields) => {
-        if (error) {
-            response.status(500).json({ message: "Internal server error" });
+    try {
+        const {name, image} = request.body;
+        const id = request.params.id;
+        const query = "UPDATE artists SET name = ?, image = ? WHERE id = ?";
+        const values = [name, image, id];
+        const [results, fields] = await connection.execute(query, values);
+        if (results.length === 0 || !results) {
+            response.status(404).json({ message: `Could not find artist by specified ID: ${id}` });
         } else {
             response.status(200).json(results);
         }
-    });
+    } catch (error) {
+        response.status(500).json({ message: "Internal server error" });
+    }
 }
 
-//TODO: DER SKAL OGSÅ SLETTES I JUNCTION-TABLES!!
+
 async function deleteArtist(request, response) {
-    try {
         const id = request.params.id;
+    try {
+        // Delete associations with tracks and albums
+        await deleteFromTable("artists_tracks", "artist_id", id, response);
+        await deleteFromTable("artists_albums", "artist_id", id, response);
+
         const query = "DELETE FROM artists WHERE id = ?";
         const values = [id];
         const [results, fields] = await connection.execute(query, values);
