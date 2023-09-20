@@ -6,12 +6,18 @@ import {createArtist} from "../artists/artists.controller.js";
 
 async function getArtistsIDByName(artistNames) {
     const artistIdArr = [];
+    const query = `SELECT id FROM artists WHERE name = ?`;
 
     for (const artistName of artistNames) {
-        const query = `SELECT id FROM artists WHERE name = ?`;
         const values = [artistName];
 
         try {
+
+            if (typeof artistName !== "string") {
+                throw new Error("artist is not of type string")
+            }
+
+
             const [rows, fields] = await connection.execute(query, values);
             if (rows.length > 0) {
                 artistIdArr.push(rows[0].id);
