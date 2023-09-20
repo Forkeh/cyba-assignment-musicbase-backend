@@ -96,27 +96,29 @@ async function deleteArtist(request, response) {
 
 
 async function getAllAlbumsByArtistName(request, response) {
-    const searchValue = request.params.searchValue;
-    const query = `WITH previous_result AS (
-    SELECT id AS id FROM artists WHERE name LIKE '%Y%')
-    SELECT albums.title AS 'title', albums.year_of_release AS 'yearOfRelease', albums.image AS 'image', artists.name AS artist
-    FROM albums
-    INNER JOIN artists_albums ON albums.id = artists_albums.album_id
-    INNER JOIN artists ON artists_albums.artist_id = artists.id
-    INNER JOIN previous_result ON artists.id = previous_result.id;`;
-    const values = [`%${searchValue}%`];
-
-    connection.query(query, values, (error, results, fields) => {
-        if (error) {
-            response.status(500).json({ message: "Internal server error" });
+    try {
+        const searchValue = request.params.searchValue;
+        const query = /*sql*/`
+        WITH previous_result AS (
+        SELECT id AS id 
+        FROM artists 
+        WHERE name LIKE ?)
+        SELECT albums.title AS 'title', albums.year_of_release AS 'yearOfRelease', albums.image AS 'image', artists.name AS artist
+        FROM albums
+        INNER JOIN artists_albums ON albums.id = artists_albums.album_id
+        INNER JOIN artists ON artists_albums.artist_id = artists.id
+        INNER JOIN previous_result ON artists.id = previous_result.id;\
+        `;
+        const values = [`%${searchValue}%`];
+        const [results, fields] = await connection.execute(query, values);
+        if (results.length === 0 || !results) {
+            response.status(404).json({ message: `Could not find albums with specified artist with ID: ${id}` });
         } else {
-            if (results.length) {
-                response.status(200).json(results);
-            } else {
-                response.status(404).json({ message: `Could not find albums with specified artist with ID: ${id}` });
-            }
+            response.status(200).json(results);
         }
-    })
+    } catch (error) {
+        response.status(500).json({ message: "Internal server error" });
+    }
 }
 
 async function searchArtists(request, response) {
