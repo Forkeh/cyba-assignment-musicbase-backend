@@ -75,7 +75,16 @@ async function createAlbum(request, response) {
         const results = await connection.execute(query, values);
         const albumID = results[0].insertId;
 
-        const artistIDArr = await getArtistsIDByName(artists);
+        let artistIDArr = [];
+        for (const artist of artists) {
+            if (typeof artists === "string") {
+                artistIDArr.push(getArtistsIDByName(artists));
+            } else if (typeof artists === "number") {
+                artistIDArr.push(artists);
+            } else {
+                throw new Error("artist is not a string or a number");
+            }
+        }
         console.log(artistIDArr);
 
         if (artistIDArr.length === 0) {
