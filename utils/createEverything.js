@@ -130,11 +130,12 @@ async function createArtist(artist) {
     }
 }
 
+//TODO: refactor
 async function createAlbum(album) {
     const { title, yearOfRelease, image, artistIDArr } = album;
 
     if (!artistIDArr || artistIDArr.length === 0) {
-        response.status(400).json({ message: "Include artists" });
+        throw new Error("Include artists");
     }
 
     try {
@@ -143,7 +144,7 @@ async function createAlbum(album) {
         const results = await connection.execute(query, values);
         const albumID = results[0].insertId;
 
-        await createAlbumInTable("artists_albums", "artist_id", artistIDArr, albumID, response);
+        await createAlbumInTable("artists_albums", "artist_id", artistIDArr, albumID);
 
         return albumID;
     } catch (error) {
@@ -156,7 +157,7 @@ async function createAlbum(album) {
     }
 }
 
-async function createAlbumInTable(tableName, idColumnName, id, albumId, res) {
+async function createAlbumInTable(tableName, idColumnName, id, albumId) {
     try {
         const query = `INSERT INTO ${tableName}(${idColumnName}, album_id) VALUES (?, ?)`;
         for (const itemID of id) {
