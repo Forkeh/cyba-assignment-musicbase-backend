@@ -72,12 +72,11 @@ async function createAlbum(request, response) {
     try {
         const values = [title, yearOfRelease, image];
         const query = "INSERT INTO albums(title, year_of_release, image) VALUES (?,?,?)";
-        const results = await connection.execute(query, values);
-        const albumID = results[0].insertId;
+        const [results] = await connection.execute(query, values);
+        const albumID = results.insertId;
         let artistIDArr = [];
         
-        artistIDArr.push(getArtistsIDByName(artists));
-        console.log(artistIDArr);
+        artistIDArr.push(await getArtistsIDByName(artists));
 
         if (artistIDArr.length === 0) {
             throw new Error("artist not found");
