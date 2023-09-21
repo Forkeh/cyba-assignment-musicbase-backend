@@ -1,183 +1,175 @@
 import connection from "../database/dbconfig.js";
-import { getArtistsIDByName } from "../utils/utils.js";
+import { deleteFromTable, getArtistsIDByName } from "../utils/utils.js";
 
 async function getAllAlbums(request, response) {
-    const query = "SELECT Albums.title, Albums.year_of_release AS yearOfRelease, Albums.image FROM albums";
-
-    connection.query(query, (error, results, fields) => {
-        if (error) {
-            response.status(500).json({ message: "Internal server error" });
-        } else {
-            if (!results) {
-                response.status(404).json({ message: "Could not find any albums" });
-            } else {
-                response.status(200).json(results);
-            }
+    try {
+        const query = "SELECT Albums.title, Albums.year_of_release AS yearOfRelease, Albums.image FROM albums";
+        const [results, fields] = await connection.execute(query);
+        if (results.length === 0 || !results) {
+            response.status(404).json({ message: "Could not find any albums" });
         }
-    });
-}
+        response.status(200).json(results);
 
-async function searchAlbums(request, response) {
-    const searchValue = request.params.searchValue;
-    console.log(searchValue);
-    const query = `
-    SELECT
-    Albums.title,
-    Albums.year_of_release AS YearOfRelease,
-    Albums.image,
-    GROUP_CONCAT(DISTINCT Artists.name ORDER BY Artists.name ASC SEPARATOR ', ') AS Artists,
-    GROUP_CONCAT(DISTINCT Tracks.title ORDER BY Tracks.title ASC SEPARATOR ', ') AS TracksOnAlbum
-    FROM Albums
-    LEFT JOIN Artists_Albums ON Albums.id = Artists_Albums.album_id
-    LEFT JOIN Artists ON Artists_Albums.artist_id = Artists.id
-    LEFT JOIN Albums_Tracks ON Albums.id = Albums_Tracks.album_id
-    LEFT JOIN Tracks ON Albums_Tracks.track_id = Tracks.id
-    WHERE albums.title LIKE ?
-    GROUP BY Albums.title, Albums.year_of_release, Albums.image;
-    `;
-    const values = [`%${searchValue}%`];
-
-    connection.query(query, values, (error, results, fields) => {
-        if (error) {
-            response.status(500).json({ message: "Internal server error" });
-        } else {
-            console.log('album search results:')
-            console.log(results)
-            if (results.length === 0 || !results) {
-                response.status(404).json({ message: `Could not find any albums with the requested search value: ${searchValue}` });
-            } else {
-                response.status(200).json(results);
-            }
-        }
-    })
+    } catch (error) {
+        response.status(500).json({ message: "Internal server error" });
+    }
 }
 
 async function getSingleAlbum(request, response) {
-    const id = request.params.id;
-    const query = "SELECT * FROM albums WHERE id = ?";
-    const values = [id];
-
-    connection.query(query, values, (error, results, fields) => {
-        if (error) {
-            response.status(500).json({ message: "Internal server error" });
+    try {
+        const id = request.params.id;
+        const query = "SELECT * FROM albums WHERE id = ?";
+        const values = [id];
+        const [results, fields] = await connection.execute(query, values);
+        if (results.length === 0 || !results) {
+            response.status(404).json({ message: "Could not find album by specified ID: " + id });
         } else {
-            if (!results[0]) {
-                response.status(404).json({ message: "Could not find album by specified ID: " + id });
-            } else {
-                response.status(200).json(results[0]);
-            }
+            response.status(200).json(results[0]);
         }
-    });
-}
-
-async function createAlbum(request, response, next) {
-    //Request.body består af et objekt med følgende properties: title STRING, duration INT, artists STRING ARR, albums STRING ARR
-    const newAlbum = request.body;
-    const values = [newAlbum.title, newAlbum.year_of_release, newAlbum.image];
-    const query = "INSERT INTO albums (title, year_of_release, image) VALUES (?,?,?)";
-
-    if (!newAlbum.artists) {
-        response.status(400).json({ message: "Include artists" });
-    } else {
-        console.log(`Artists: ${newAlbum.artists}`);
-        request.body.artistsID = await getArtistsIDByName(newAlbum.artists);
-        console.log(request.body.artistsID);
+    } catch (error) {
+        response.status(500).json({ message: "Internal server error" });
     }
-
-    connection.query(query, values, (error, results, fields) => {
-        if (error) {
-            console.log("error1");
-            response.status(500).json({ message: "Internal server error" });
-        } else {
-            request.body.albumID = results.insertId;
-            next();
-            return;
-        }
-    });
 }
 
-async function updateAlbumsArtistsTable(request, response) {
-    const query = `INSERT INTO artists_albums(artist_id, album_id) VALUES (?,?)`
-    const artistsIdArr = request.body.artistsID;
-    
-    for (const artistID of artistsIdArr) {
-        const values = [artistID, request.body.albumID];
-
-        connection.query(query, values, (error, results, fields) => {
-            if (error) {
-                response.status(500).json({ message: "Internal server error" });
-            } 
-        });
-    }
-    
-    response.status(204).json();
-}
-
-async function updateAlbum(request, response) {
-    const updatedAlbum = request.body;
-    const id = request.params.id;
-    const values = [
-        updatedAlbum.title,
-        updatedAlbum.year_of_release,
-        updatedAlbum.image,
-        id,
-    ];
-    const query =
-        "UPDATE albums SET title = ?, year_of_release = ?, image = ? WHERE id = ?";
-
-    connection.query(query, values, (error, results, fields) => {
-        if (error) {
-            response.status(500).json({ message: "Internal server error" });
+async function searchAlbums(request, response) {
+    try {
+        const searchValue = request.params.searchValue;
+        const query = `
+        SELECT
+        Albums.title,
+        Albums.year_of_release AS YearOfRelease,
+        Albums.image,
+        GROUP_CONCAT(DISTINCT Artists.name ORDER BY Artists.name ASC SEPARATOR ', ') AS Artists,
+        GROUP_CONCAT(DISTINCT Tracks.title ORDER BY Tracks.title ASC SEPARATOR ', ') AS TracksOnAlbum
+        FROM Albums
+        LEFT JOIN Artists_Albums ON Albums.id = Artists_Albums.album_id
+        LEFT JOIN Artists ON Artists_Albums.artist_id = Artists.id
+        LEFT JOIN Albums_Tracks ON Albums.id = Albums_Tracks.album_id
+        LEFT JOIN Tracks ON Albums_Tracks.track_id = Tracks.id
+        WHERE albums.title LIKE ?
+        GROUP BY Albums.title, Albums.year_of_release, Albums.image;
+        `;
+        const values = [`%${searchValue}%`];
+        const [results, fields] = await connection.execute(query, values);
+        if (results.length === 0 || !results) {
+            response.status(404).json({message: `Could not find any albums with the requested search value: ${searchValue}`});
         } else {
             response.status(200).json(results);
         }
-    });
+    } catch (error) {
+        response.status(500).json({message: "Internal server error"});
+    }
+}
+
+async function createAlbum(request, response) {
+    //Request.body består af et objekt med følgende properties: title STRING, yearOfRelease INT, image STRING, artists STRING ARR
+    const { title, yearOfRelease, image, artists } = request.body;
+
+    if (!artists) {
+        response.status(400).json({ message: "Include artists" });
+    } 
+
+    try {
+        const values = [title, yearOfRelease, image];
+        const query = "INSERT INTO albums(title, year_of_release, image) VALUES (?,?,?)";
+        const [results] = await connection.execute(query, values);
+        const albumID = results.insertId;
+        let artistIDArr = [];
+        
+        artistIDArr.push(await getArtistsIDByName(artists));
+
+        if (artistIDArr.length === 0) {
+            throw new Error("artist not found");
+        }
+
+        await createAlbumInTable("artists_albums", "artist_id", artistIDArr, albumID, response);
+
+        response.status(201).json({ message: "Album created" });
+    } catch (error) {
+
+        if (error.message) {
+            response.status(400).json({ message: `${error.message}` });
+        } else {
+            response.status(500).json({ message: "Internal server error at createAlbum" });
+        }
+    }
+}
+
+async function createAlbumInTable(tableName, idColumnName, id, albumId, res) {
+    try {
+        const query = `INSERT INTO ${tableName}(${idColumnName}, album_id) VALUES (?, ?)`;
+        for (const itemID of id) {
+            const values = [itemID, albumId];
+            await connection.query(query, values);
+        }
+    } catch (error) {
+        res.status(500).json({ message: `Internal server error at CreateTrackIn${tableName}` });
+    }
+}
+
+async function updateAlbum(request, response) {
+    try {
+        const {title, yearOfRelease, image} = request.body;
+        const id = request.params.id;
+        const query = "UPDATE albums SET title = ?, year_of_release = ?, image = ? WHERE id = ?";
+        const values = [title, yearOfRelease, image, id];
+        const [results, fields] = await connection.execute(query, values);
+        if (results.length === 0 || !results) {
+            response.status(404).json({ message: `Could not find album by specified ID: ${id}` });
+        } else {
+            response.status(200).json(results[0]);
+        }
+    } catch (error) {
+        response.status(500).json({ message: "Internal server error" });
+    }
 }
 
 async function deleteAlbum(request, response) {
-    const id = request.params.id;
-    const query = "DELETE FROM albums WHERE id = ?";
+    const albumID = request.params.id;
+    
+    try {
+        // Delete associations with artists
+        await deleteFromTable("artists_albums", "album_id", albumID, response);
+        const query = "DELETE FROM albums WHERE id = ?";
+        await connection.execute(query, [albumID]);
 
-    connection.query(query, [id], (error, results, fields) => {
-        if (error) {
-            response.status(500).json({ message: "Internal server error" });
-        } else {
-            response.status(204).json();
-        }
-    });
+        response.status(204).json();
+    } catch (error) {
+        response.status(500).json({ message: "Internal server error in deleteAlbum" });
+    }
 }
 
-async function getAllAlbumDataByAlbumID(request, response) {
-    const id = request.params.id;
-    const values = [id];
-    const query = `
-    SELECT
-    Albums.title,
-    Albums.year_of_release AS YearOfRelease,
-    Albums.image,
-    GROUP_CONCAT(DISTINCT Artists.name ORDER BY Artists.name ASC SEPARATOR ', ') AS ArtistsOnAlbum,
-    GROUP_CONCAT(DISTINCT Tracks.title ORDER BY Tracks.title ASC SEPARATOR ', ') AS TracksOnAlbum
-    FROM Albums
-    LEFT JOIN Albums_Tracks ON Albums.id = Albums_Tracks.album_id
-    LEFT JOIN Tracks ON Albums_Tracks.track_id = Tracks.id
-    LEFT JOIN Artists_Tracks ON Tracks.id = Artists_Tracks.track_id
-    LEFT JOIN Artists ON Artists_Tracks.artist_id = Artists.id
-    WHERE Albums.id = ?
-    GROUP BY Albums.title, Albums.year_of_release, Albums.image;
-    `;
 
-    connection.query(query, values, (error, results, fields) => {
-        if (error) {
-            response.status(500).json({ message: "Internal server error" });
-        } else {
-            if (results.length) {
-                response.status(200).json(results);
+//TODO: refactor to something more similar to RACEs example
+async function getAllAlbumDataByAlbumID(request, response) {
+    try {
+        const id = request.params.id;
+        const values = [id];
+        const query = `
+        SELECT
+        Albums.title,
+        Albums.year_of_release AS YearOfRelease,
+        Albums.image,
+        GROUP_CONCAT(DISTINCT Artists.name ORDER BY Artists.name ASC SEPARATOR ', ') AS ArtistsOnAlbum,
+        GROUP_CONCAT(DISTINCT Tracks.title ORDER BY Tracks.title ASC SEPARATOR ', ') AS TracksOnAlbum
+        FROM Albums
+        LEFT JOIN Albums_Tracks ON Albums.id = Albums_Tracks.album_id
+        LEFT JOIN Tracks ON Albums_Tracks.track_id = Tracks.id
+        LEFT JOIN Artists_Tracks ON Tracks.id = Artists_Tracks.track_id
+        LEFT JOIN Artists ON Artists_Tracks.artist_id = Artists.id
+        WHERE Albums.id = ?
+        GROUP BY Albums.title, Albums.year_of_release, Albums.image;
+        `;
+        const [results, fields] = await connection.execute(query, values);
+            if (results.length === 0 || !results) {
+                response.status(404).json({ message: `Could not find album by specified ID: ${id}` });
             } else {
-                response.status(404).json({ message: `Could not find tracks with specified album with ID: ${id}` });
+                response.status(200).json(results);
             }
-        }
-    })
-} 
+    } catch (error) {
+        response.status(500).json({ message: "Internal server error" });
+    }
+}
 
 export {
     getAllAlbums,
@@ -185,7 +177,6 @@ export {
     createAlbum,
     updateAlbum,
     deleteAlbum,
-    updateAlbumsArtistsTable,
     getAllAlbumDataByAlbumID,
     searchAlbums
 };
