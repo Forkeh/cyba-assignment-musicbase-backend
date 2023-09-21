@@ -147,7 +147,7 @@ async function createTrack(track) {
 
         if (trackID) {
             // track already exists
-            await createTrackInTable("albums_tracks", "album_id", albumID, trackID);
+            await createTrackInTable("albums_tracks", "album_id", [albumID], trackID);
         } else {
             // create track
             const query = /*sql*/ `INSERT INTO tracks(title, duration) VALUES (?,?)`;
