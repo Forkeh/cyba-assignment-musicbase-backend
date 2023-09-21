@@ -37,7 +37,7 @@ async function searchAlbums(request, response) {
         const query = `
         SELECT
         Albums.title,
-        Albums.year_of_release AS YearOfRelease,
+        Albums.year_of_release AS yearOfRelease,
         Albums.image,
         GROUP_CONCAT(DISTINCT Artists.name ORDER BY Artists.name ASC SEPARATOR ', ') AS Artists,
         GROUP_CONCAT(DISTINCT Tracks.title ORDER BY Tracks.title ASC SEPARATOR ', ') AS TracksOnAlbum
