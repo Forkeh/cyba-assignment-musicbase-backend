@@ -1,4 +1,4 @@
-DROP DATABASE music_base_db;
+DROP DATABASE IF EXISTS music_base_db;
 
 CREATE DATABASE music_base_db;
 
@@ -58,7 +58,8 @@ VALUES ('Daft Punk', 'https://i.discogs.com/nfDBJRXENXyNXvNtszxObIj7Kz8-0fs3w25S
        ('Norah Jones', 'https://i.discogs.com/Q0bQiyRI4nFojIOMbXLdkmmofeOwsV6WSCh9SDReeuY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE0NzAz/MS0xMzM3MjczMDEy/LTI3NTIuanBlZw.jpeg'),
        ('Metallica', 'https://i.discogs.com/ZVoyyAMF573Q6dx3Te1ko9rN5Zrr9rfYJt1x0wIoGmM/rs:fit/g:sm/q:90/h:600/w:462/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE4ODM5/LTE1OTk3NjM3NjYt/MjMxNi5qcGVn.jpeg'),
        ('Drake', 'https://i.discogs.com/Dlt-kor5Zqfen9tulh91C9XYLtmwO9Qt-a6UHeeAAzw/rs:fit/g:sm/q:90/h:340/w:396/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE1MTE5/OS0xNTA1ODQ4MDQ4/LTI0OTguanBlZw.jpeg'),
-       ('Rihanna', 'https://i.discogs.com/xDR38kBBYDzZQRDribN1MkPXC0vwfGRnU8ccweTuDAA/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTMyMTEy/OC0xNjY3MTU0NjUy/LTE1NjQuanBlZw.jpeg');
+       ('Rihanna', 'https://i.discogs.com/xDR38kBBYDzZQRDribN1MkPXC0vwfGRnU8ccweTuDAA/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTMyMTEy/OC0xNjY3MTU0NjUy/LTE1NjQuanBlZw.jpeg'),
+       ('Eminem', 'https://i.discogs.com/KZbEwJb2z2t0eg82m4BvBJwnXb8Dp82Iwks7WMdtZVM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTM4NjYx/LTE1MzYyMDA2NTIt/NzMwNS5qcGVn.jpeg');
 
 -- Insert albums
 INSERT INTO Albums (title, year_of_release, image) VALUES
@@ -71,7 +72,8 @@ INSERT INTO Albums (title, year_of_release, image) VALUES
     ('Take Care', 2011, 'https://i.discogs.com/AXsHLi1NYQL0XfJ9KW0fHGeteMJP6TSj6iqb3EhJuPI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2Mzcz/OTEtMTQ1ODM3OTA2/NS03NjkzLmpwZWc.jpeg'),
     ('Views', 2016, 'https://i.discogs.com/bBrgtJ_6yoRytb3xwokc0LTv7p14y5c1YYzfGfBjylQ/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg0NTI4/ODAtMTY1ODUzNTM5/My04ODU0LmpwZWc.jpeg'),
     ('Good Girl Gone Bad', 2007, 'https://i.discogs.com/PKYH6I2b2lf0YjEkTjkDec-L3I4AmBydZXUENort1bI/rs:fit/g:sm/q:90/h:597/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEwMjI4/MzUtMTM1MTEwMTgy/My0zNDI2LmpwZWc.jpeg'),
-    ('Loud', 2010, 'https://i.discogs.com/cgYjUelHu_1lNhpjHEglhMDrYKPJ3x1NCSVG4HGps7Y/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1Njc3/NTktMTI5NTcxODE4/My5qcGVn.jpeg');
+    ('Loud', 2010, 'https://i.discogs.com/cgYjUelHu_1lNhpjHEglhMDrYKPJ3x1NCSVG4HGps7Y/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1Njc3/NTktMTI5NTcxODE4/My5qcGVn.jpeg'),
+    ('Recovery', 2010, 'https://i.discogs.com/8ZeskgkSlrdrepcAA-FMDtEhkFsjf93EEhNVouNzx2k/rs:fit/g:sm/q:90/h:600/w:596/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0MDE3/ODAtMTMwNDYyNjUz/NS5qcGVn.jpeg');
 
 -- Insert tracks
 INSERT INTO Tracks (title, duration) VALUES
@@ -104,7 +106,11 @@ INSERT INTO Tracks (title, duration) VALUES
     ('Shut Up and Drive', 196),
     ('Only Girl (In the World)', 235),
     ('What\'s My Name?', 243),
-    ('S&M', 243);
+    ('S&M', 243),
+    ('Love The Way You Lie', 255),
+    ('Not Afraid', 248),
+    ('Cinderella Man', 279),
+    ('Cold Wind Blows', 304);
 
 
 -- Link artists to their albums and tracks
@@ -118,7 +124,8 @@ INSERT INTO Artists_Albums (artist_id, album_id) VALUES
     (4, 7),  -- Drake - Take Care
     (4, 8),  -- Drake - Views
     (5, 9),   -- Rihanna - Good Girl Gone Bad
-    (5, 10);  -- Rihanna - Loud
+    (5, 10),  -- Rihanna - Loud
+    (6, 11); -- Eminem - Recovery
 
 INSERT INTO Artists_Tracks (artist_id, track_id) VALUES
     (1, 1),  -- Daft Punk - One More Time
@@ -151,7 +158,12 @@ INSERT INTO Artists_Tracks (artist_id, track_id) VALUES
     (5, 28),  -- Rihanna - Only Girl (In the World)
     (5, 29),  -- Rihanna - What's My Name?
     (5, 30),  -- Rihanna - S&M
-    (5, 13);  -- Rihanna - Battery
+    (5, 13),  -- Rihanna - Battery
+    (5, 31),  -- Rihanna - Love the way you lie
+    (6, 31),  -- Eminem - Love the way you lie
+    (6, 32),  -- Eminem - Not Afraid
+    (6, 33),  -- Eminem - Cinderella Man
+    (6, 34);  -- Eminem - Cold Wind Blows
 
 -- Insert track_id and album_id into Albums_Tracks table
 INSERT INTO Albums_Tracks (track_id, album_id)
@@ -185,4 +197,8 @@ VALUES
     (27, 9),  -- Shut Up and Drive - Good Girl Gone Bad
     (28, 10),  -- Only Girl (In the World) - Loud
     (29, 10),  -- What's My Name? - Loud
-    (30, 10);  -- S&M - Loud;
+    (30, 10),  -- S&M - Loud;
+    (31, 11),  -- Love The Way You Lie - Recovery
+    (32, 11),  -- Not Afraid - Recovery
+    (33, 11),  -- Cinderella Man - Recovery
+    (34, 11);  -- Cold Wind Blows - Recovery
