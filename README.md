@@ -16,7 +16,7 @@ Then navigate to the directory on your computer
 cd cyba-assignment-musicbase-backend
 ```
 
-Lastly, use the package manager [npm](https://nodejs.org/en) to install necessary dependencies.
+Lastly, use the package manager [npm](https://www.npmjs.com/) to install necessary dependencies.
 
 ```bash
 npm install
