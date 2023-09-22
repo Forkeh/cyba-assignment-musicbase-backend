@@ -14,7 +14,9 @@ app.use(cors());
 
 // Routes
 app.use("/", trackRouter, albumRouter, artistRouter);
-
+app.use("/", async (req, res) => {
+    res.send("Server.js is running🎉")
+})
 // Start server
 app.listen(port, () => {
     console.log(`Server is running on ${port}`);
