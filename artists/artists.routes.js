@@ -3,15 +3,21 @@ import { createArtistEndpoint, deleteArtist, getAllAlbumsByArtistName, getAllArt
 
 const artistRouter = express.Router();
 
-artistRouter.get("/artists/", getAllArtists);
-artistRouter.get("/artists/:id", getSingleArtist);
-artistRouter.get("/artists/search/:searchValue", searchArtists)
-artistRouter.post("/artists/", createArtistEndpoint);
-artistRouter.put("/artists/:id", updateArtist);
-artistRouter.delete("/artists/:id", deleteArtist);
 
-//#7 branch - få alle albums fra en bestemt artist ud fra et navn
-artistRouter.get("/artists/albums/:searchValue", getAllAlbumsByArtistName); //TODO - kig lige på sql query'et - det ser vildt ud :)
+artistRouter.route("/artists/")
+    .get(getAllArtists)
+    .post(createArtistEndpoint);
+
+artistRouter.route("/artists/:id")
+    .get(getSingleArtist)
+    .put(updateArtist)
+    .delete(deleteArtist);
+
+artistRouter.route("/artists/search/:searchValue")
+    .get(searchArtists);
+
+artistRouter.route("/artists/albums/:searchValue")
+    .get(getAllAlbumsByArtistName);
 
 
 export default artistRouter

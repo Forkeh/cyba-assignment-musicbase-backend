@@ -9,14 +9,23 @@ import {
     getAllAlbumDataByAlbumID
 } from "./albums.controller.js";
 
+
 const albumRouter = express.Router();
 
-albumRouter.get("/albums/", getAllAlbums);
-albumRouter.get("/albums/search/:searchValue", searchAlbums)
-albumRouter.get("/albums/:id", getSingleAlbum);
-albumRouter.get("/albums/:id/tracks", getAllAlbumDataByAlbumID)
-albumRouter.post("/albums/", createAlbum);
-albumRouter.put("/albums/:id", updateAlbum);
-albumRouter.delete("/albums/:id", deleteAlbum); // fejler og giver 500 til postman ved test
+albumRouter.route("/albums/")
+    .get(getAllAlbums)
+    .post(createAlbum);
+
+albumRouter.route("/albums/:id")
+    .get(getSingleAlbum)
+    .put(updateAlbum)
+    .delete(deleteAlbum);
+
+albumRouter.route("/albums/search/:searchValue")
+    .get(searchAlbums);
+
+albumRouter.route("/albums/:id/tracks")
+    .get(getAllAlbumDataByAlbumID);
+
 
 export default albumRouter;
