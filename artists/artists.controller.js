@@ -1,6 +1,6 @@
 import connection from "../database/dbconfig.js";
 import {createArtistAsync} from "../utils/createEverything.js";
-import {deleteFromTable} from "../utils/utils.js";
+import {deleteFromAlbumsTracksTable, deleteFromTable, deleteOrphanedRecords, getAssociatedIds} from "../utils/utils.js";
 
 async function getAllArtists(request, response) {
     try {
@@ -80,27 +80,39 @@ async function updateArtist(request, response) {
     }
 }
 
-
 async function deleteArtist(request, response) {
-        const id = request.params.id;
+    const artistId = request.params.id;
     try {
+        // Get album IDs and track IDs associated with the artist
+        const albumIds = await getAssociatedIds("artists_albums", "album_id", "artist_id", artistId);
+        const trackIds = await getAssociatedIds("artists_tracks", "track_id", "artist_id", artistId);
+        console.log(albumIds);
+        console.log(trackIds);
         // Delete associations with tracks and albums
-        await deleteFromTable("artists_tracks", "artist_id", id, response);
-        await deleteFromTable("artists_albums", "artist_id", id, response);
+        await deleteFromTable("artists_albums", "artist_id", [artistId]);
+        await deleteFromTable("artists_tracks", "track_id", trackIds);
+        await deleteFromAlbumsTracksTable(albumIds, trackIds);
 
+        // Delete orphaned albums and tracks
+        await deleteOrphanedRecords("albums", "album_id", albumIds);
+        await deleteOrphanedRecords("tracks", "track_id", trackIds);
+
+        // Delete the artist
         const query = "DELETE FROM artists WHERE id = ?";
-        const values = [id];
+        const values = [artistId];
         const [results, fields] = await connection.execute(query, values);
-        if (results.length === 0 || !results) {
-            response.status(404).json({ message: `Could not find artist by specified ID: ${id}` });
+        if (results.affectedRows === 0) {
+            response.status(404).json({
+                message: `Could not find artist by specified ID: ${artistId}`,
+            });
         } else {
+            console.log("deleted artist")
             response.status(204).json();
         }
     } catch (error) {
         response.status(500).json({ message: "Internal server error" });
     }
 }
-
 
 async function getAllAlbumsByArtistName(request, response) {
     try {

@@ -133,8 +133,8 @@ async function deleteTrack(req, res) {
 
     try {
         // Delete associations with artists and albums
-        await deleteFromTable("artists_tracks", "track_id", id, res);
-        await deleteFromTable("albums_tracks", "track_id", id, res);
+        await deleteFromTable("artists_tracks", "track_id", id);
+        await deleteFromTable("albums_tracks", "track_id", id);
 
         // Delete the track from the "tracks" table
         const query = `DELETE FROM tracks WHERE id = ?`;

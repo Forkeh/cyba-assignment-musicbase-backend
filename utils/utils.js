@@ -75,14 +75,88 @@ async function searchAll(request, response) {
     }
 }
 
-async function deleteFromTable(tableName, columnName, id, res) {
+async function deleteFromTable(tableName, columnName, ids) {
+    console.log('deleteFromTable')
+    console.log(`tableName: ${tableName} - columnName: ${columnName} - ids: ${ids}`)
     try {
-        const query = `DELETE FROM ${tableName} WHERE ${columnName} = ?`;
-        const values = [id];
-        await connection.query(query, values);
+        const placeholders = ids.map(() => '?').join(',');
+        console.log(`placeholders: ${placeholders}`)
+        const query = `DELETE FROM ${tableName} WHERE ${columnName} IN (${placeholders})`;
+        console.log(`query: ${query}`)
+        const values = [...ids];
+        console.log(`values: ${values}`)
+        await connection.execute(query, values);
     } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
+        throw error.message(`Internal server error while deleting from ${tableName}`);
     }
 }
 
-export { getAlbumsIDByName, getArtistsIDByName, searchAll, deleteFromTable };
+async function deleteFromAlbumsTracksTable(albumIds, trackIds) {
+    try {
+        for (const albumId of albumIds) {
+            // Generate placeholders for trackIds
+            const placeholders = trackIds.map(() => '?').join(',');
+            // Construct the dynamic query with placeholders
+            const query = `DELETE FROM albums_tracks WHERE album_id = ? AND track_id IN (${placeholders})`;
+            // Create an array with albumId repeated for each trackId
+            const values = [albumId, ...trackIds];
+            const [result] = await connection.execute(query, values);
+
+            if (result.affectedRows === 0) {
+                console.log(`Could not find album by specified ID: ${albumId}`);
+            } else {
+                console.log(`Deleted ${result.affectedRows} rows from albums_tracks`);
+            }
+        }
+    } catch (error) {
+        throw error.message(`Internal server error while deleting from albums_tracks`);
+    }
+}
+
+async function deleteOrphanedRecords(tableName, columnName, ids) {
+    try {
+        // loop through ids and delete if no longer associated with any other records
+        for (const id of ids) {
+            let query;
+            if (tableName === 'albums') {
+                // if album is not associated with any albums_tracks, delete it
+                query = `
+                    DELETE FROM ${tableName}
+                    WHERE id = ? 
+                    AND (SELECT COUNT(*) FROM albums_tracks WHERE album_id = ?) = 0
+                    AND (SELECT COUNT(*) FROM artists_albums WHERE album_id = ?) = 0
+                `;
+            } else if (tableName === 'tracks') {
+                // if track is not associated with any artists_tracks or albums_tracks, delete it
+                query = `
+                    DELETE FROM ${tableName}
+                    WHERE id = ?
+                    AND (SELECT COUNT(*) FROM artists_tracks WHERE track_id = ?) = 0
+                    AND (SELECT COUNT(*) FROM albums_tracks WHERE track_id = ?) = 0
+                `;
+            }
+            const [results] = await connection.execute(query, [id, id, id]);
+            if (results && results.affectedRows > 0) {
+                console.log(`Deleted ${results.affectedRows} rows from ${tableName}`);
+            } else {
+                console.log(`No rows deleted from ${tableName}`);
+            }
+        }
+        console.log(`Deleted orphaned records from ${tableName}`)
+    } catch (error) {
+        throw error.message(`Internal server error while deleting orphaned records from ${tableName}`);
+    }
+}
+
+
+async function getAssociatedIds(tableName, columnName, conditionColumn, id) {
+    try {
+        const query = `SELECT ${columnName} FROM ${tableName} WHERE ${conditionColumn} = ?`;
+        const [results] = await connection.execute(query, [id]);
+        return results.map((result) => result[columnName]);
+    } catch (error) {
+        throw error.message(`Internal server error while getting associated IDs from ${tableName}`);
+    }
+}
+
+export { getAlbumsIDByName, getArtistsIDByName, searchAll, deleteFromTable, deleteOrphanedRecords, getAssociatedIds, deleteFromAlbumsTracksTable };
