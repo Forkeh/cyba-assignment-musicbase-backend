@@ -76,6 +76,9 @@ async function searchAll(request, response) {
 }
 
 async function deleteFromTable(tableName, columnName, ids) {
+    if (!Array.isArray(ids)) {
+        ids = [ids];
+    }
     console.log('deleteFromTable')
     console.log(`tableName: ${tableName} - columnName: ${columnName} - ids: ${ids}`)
     try {
@@ -153,7 +156,13 @@ async function getAssociatedIds(tableName, columnName, conditionColumn, id) {
     try {
         const query = `SELECT ${columnName} FROM ${tableName} WHERE ${conditionColumn} = ?`;
         const [results] = await connection.execute(query, [id]);
-        return results.map((result) => result[columnName]);
+        const mappedResults =  results.map((result) => result[columnName]);
+        if (Array.isArray(mappedResults)) {
+            return mappedResults;
+        } else {
+            return [mappedResults];
+        }
+
     } catch (error) {
         throw error.message(`Internal server error while getting associated IDs from ${tableName}`);
     }

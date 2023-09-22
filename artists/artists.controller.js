@@ -86,10 +86,10 @@ async function deleteArtist(request, response) {
         // Get album IDs and track IDs associated with the artist
         const albumIds = await getAssociatedIds("artists_albums", "album_id", "artist_id", artistId);
         const trackIds = await getAssociatedIds("artists_tracks", "track_id", "artist_id", artistId);
-        console.log(albumIds);
-        console.log(trackIds);
+        console.log(albumIds)
+        console.log(trackIds)
         // Delete associations with tracks and albums
-        await deleteFromTable("artists_albums", "artist_id", [artistId]);
+        await deleteFromTable("artists_albums", "artist_id", artistId);
         await deleteFromTable("artists_tracks", "track_id", trackIds);
         await deleteFromAlbumsTracksTable(albumIds, trackIds);
 
@@ -110,7 +110,7 @@ async function deleteArtist(request, response) {
             response.status(204).json();
         }
     } catch (error) {
-        response.status(500).json({ message: "Internal server error" });
+        response.status(500).json({ message: "Internal server error - failed deleting " });
     }
 }
 

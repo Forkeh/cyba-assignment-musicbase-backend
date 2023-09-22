@@ -23,10 +23,3 @@ app.listen(port, () => {
 
 
 
-//Søg blandt alle 3 tabeller
-app.get("/search/:searchValue", searchAll)
-
-
-
-app.use("/", trackRouter, albumRouter, artistRouter);
-

@@ -8,6 +8,7 @@ import {
     createTrack,
 } from "./tracks.controllers.js";
 import {createAllAtOnce} from "../utils/createEverything.js";
+import {searchAll} from "../utils/utils.js";
 
 const trackRouter = express.Router();
 
@@ -19,5 +20,6 @@ trackRouter.put("/tracks/:id", updateTrack);
 trackRouter.post("/tracks", createTrack);
 
 trackRouter.post("/artists/albums/tracks", createAllAtOnce);
+trackRouter.get("/artists/albums/tracks/:searchValue", searchAll)
 
 export default trackRouter;
