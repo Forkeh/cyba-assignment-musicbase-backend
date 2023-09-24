@@ -1,5 +1,5 @@
 import connection from "../database/dbconfig.js";
-import {deleteFromTable, getArtistsIDByName, getAssociatedIds} from "../utils/utils.js";
+import {deleteFromTable, getArtistsIDByName, getAssociatedIds, getIdsByNameOrID} from "../utils/utils.js";
 
 async function getAllAlbums(request, response) {
     try {
@@ -62,33 +62,21 @@ async function searchAlbums(request, response) {
 }
 
 async function createAlbum(request, response) {
-    //Request.body: title: string, yearOfRelease: int, image: string, artist: string | int
-    //TODO: Vi antager at artist: [string eller int]
-    
+    //Request.body: title: string, yearOfRelease: int, image: string, artist: string[] | string | int[] | int
     const { title, yearOfRelease, image, artists } = request.body;
-    let artistIdArr = [];
 
+    // Check if required parameters are missing
     if (!artists || !title || !yearOfRelease || !image) {
         throw new Error("Missing required parameters");
-    } else if (!Array.isArray(artists)){
-        throw new Error("artists must be an array");
     }
 
-    for (const artistID of artists) {
-        
-        if (artistID.match(/^\d+$/)) {
-            // The artist parameter is a numeric string, convert it to a number
-            artistIdArr.push(parseInt(artistID, 10));
-        } else if (typeof artistID === "string") {
-            // Get artist id from name
-            artistIdArr.push(await getArtistsIDByName([artistID]));
-        } else {
-            throw new Error("Invalid artist");
-        }
-    }
-    
+    // Ensure artists is always an array
+    const artistsArray = Array.isArray(artists) ? artists : [artists];
+    // Get artist IDs
+    const artistIdArr = await getIdsByNameOrID(artistsArray, "artists");
 
     try {
+        // Create album
         const values = [title, yearOfRelease, image];
         const query = "INSERT INTO albums(title, year_of_release, image) VALUES (?,?,?)";
         const [results] = await connection.execute(query, values);
@@ -97,11 +85,11 @@ async function createAlbum(request, response) {
         }
         const albumID = results.insertId;
 
+        // Create associations with artists
         await createAlbumInTable("artists_albums", "artist_id", artistIdArr, albumID, response);
 
         response.status(201).json({ message: "Album created" });
     } catch (error) {
-
         if (error.message) {
             response.status(400).json({ message: `${error.message}` });
         } else {
