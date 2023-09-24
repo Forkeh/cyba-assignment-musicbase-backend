@@ -66,7 +66,7 @@ async function createAlbum(request, response) {
     //TODO: Vi antager at artist: [string eller int]
     
     const { title, yearOfRelease, image, artists } = request.body;
-    let artistIdArr;
+    let artistIdArr = [];
 
     if (!artists || !title || !yearOfRelease || !image) {
         throw new Error("Missing required parameters");
@@ -78,10 +78,10 @@ async function createAlbum(request, response) {
         
         if (artistID.match(/^\d+$/)) {
             // The artist parameter is a numeric string, convert it to a number
-            artistIdArr = parseInt(artistID, 10);
+            artistIdArr.push(parseInt(artistID, 10));
         } else if (typeof artistID === "string") {
             // Get artist id from name
-            artistIdArr = await getArtistsIDByName([artistID]);
+            artistIdArr.push(await getArtistsIDByName([artistID]));
         } else {
             throw new Error("Invalid artist");
         }
