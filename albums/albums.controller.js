@@ -70,6 +70,8 @@ async function createAlbum(request, response) {
 
     if (!artists || !title || !yearOfRelease || !image) {
         throw new Error("Missing required parameters");
+    } else if (!Array.isArray(artists)){
+        throw new Error("artists must be an array");
     }
 
     for (const artistID of artists) {
