@@ -1,9 +1,9 @@
 import connection from "../database/dbconfig.js";
-import { deleteFromTable, getArtistsIDByName } from "../utils/utils.js";
+import {deleteFromTable, getArtistsIDByName, getAssociatedIds, getIdsByNameOrID} from "../utils/utils.js";
 
 async function getAllAlbums(request, response) {
     try {
-        const query = "SELECT Albums.title, Albums.year_of_release AS yearOfRelease, Albums.image FROM albums";
+        const query = "SELECT id, title, year_of_release AS yearOfRelease, image FROM albums";
         const [results, fields] = await connection.execute(query);
         if (results.length === 0 || !results) {
             response.status(404).json({ message: "Could not find any albums" });
@@ -62,31 +62,34 @@ async function searchAlbums(request, response) {
 }
 
 async function createAlbum(request, response) {
-    //Request.body består af et objekt med følgende properties: title STRING, yearOfRelease INT, image STRING, artists STRING ARR
+    //Request.body: title: string, yearOfRelease: int, image: string, artist: string[] | string | int[] | int
     const { title, yearOfRelease, image, artists } = request.body;
 
-    if (!artists) {
-        response.status(400).json({ message: "Include artists" });
-    } 
+    // Check if required parameters are missing
+    if (!artists || !title || !yearOfRelease || !image) {
+        throw new Error("Missing required parameters");
+    }
+
+    // Ensure artists is always an array
+    const artistsArray = Array.isArray(artists) ? artists : [artists];
+    // Get artist IDs
+    const artistIdArr = await getIdsByNameOrID(artistsArray, "artists");
 
     try {
+        // Create album
         const values = [title, yearOfRelease, image];
         const query = "INSERT INTO albums(title, year_of_release, image) VALUES (?,?,?)";
         const [results] = await connection.execute(query, values);
-        const albumID = results.insertId;
-        let artistIDArr = [];
-        
-        artistIDArr.push(await getArtistsIDByName(artists));
-
-        if (artistIDArr.length === 0) {
-            throw new Error("artist not found");
+        if (results.length === 0 || !results) {
+            throw new Error("Could not create album");
         }
+        const albumID = results.insertId;
 
-        await createAlbumInTable("artists_albums", "artist_id", artistIDArr, albumID, response);
+        // Create associations with artists
+        await createAlbumInTable("artists_albums", "artist_id", artistIdArr, albumID, response);
 
         response.status(201).json({ message: "Album created" });
     } catch (error) {
-
         if (error.message) {
             response.status(400).json({ message: `${error.message}` });
         } else {
@@ -95,15 +98,27 @@ async function createAlbum(request, response) {
     }
 }
 
-async function createAlbumInTable(tableName, idColumnName, id, albumId, res) {
+async function createAlbumInTable(tableName, idColumnName, id, albumId) {
+    console.log(id)
     try {
         const query = `INSERT INTO ${tableName}(${idColumnName}, album_id) VALUES (?, ?)`;
+        if (!Array.isArray(id)) {
+            const [results] = await connection.query(query, [id, albumId]);
+            if (results.affectedRows === 0 || !results) {
+                throw new Error(`Could not create album in ${tableName}`);
+            } else {
+                return;
+            }
+        }
         for (const itemID of id) {
             const values = [itemID, albumId];
-            await connection.query(query, values);
+            const [result] = await connection.query(query, values);
+            if (result.affectedRows === 0 || !result) {
+                throw new Error(`Could not create album in ${tableName}`);
+            }
         }
     } catch (error) {
-        res.status(500).json({ message: `Internal server error at CreateTrackIn${tableName}` });
+        throw error.message;
     }
 }
 
@@ -128,6 +143,16 @@ async function deleteAlbum(request, response) {
     const albumID = request.params.id;
     
     try {
+        // find tracks associated with album
+        const albumTracks = await getAssociatedIds("albums_tracks", "track_id", "album_id", albumID);
+        if (albumTracks.length > 0) {
+            // delete associations with tracks
+            await deleteFromTable("albums_tracks", "album_id", albumID, response);
+            // delete associations with artists
+            await deleteFromTable("artists_tracks", "track_id", albumTracks, response);
+            // delete tracks
+            await deleteFromTable("tracks", "id", albumTracks, response);
+        }
         // Delete associations with artists
         await deleteFromTable("artists_albums", "album_id", albumID, response);
         const query = "DELETE FROM albums WHERE id = ?";
@@ -139,35 +164,71 @@ async function deleteAlbum(request, response) {
     }
 }
 
-
-//TODO: refactor to something more similar to RACEs example
 async function getAllAlbumDataByAlbumID(request, response) {
+    const albumId = request.params.id;
+    if (!albumId) {
+        response.status(400).json({ message: "Missing album ID" });
+        return
+    }
     try {
-        const id = request.params.id;
-        const values = [id];
-        const query = `
-        SELECT
-        Albums.title,
-        Albums.year_of_release AS YearOfRelease,
-        Albums.image,
-        GROUP_CONCAT(DISTINCT Artists.name ORDER BY Artists.name ASC SEPARATOR ', ') AS ArtistsOnAlbum,
-        GROUP_CONCAT(DISTINCT Tracks.title ORDER BY Tracks.title ASC SEPARATOR ', ') AS TracksOnAlbum
-        FROM Albums
-        LEFT JOIN Albums_Tracks ON Albums.id = Albums_Tracks.album_id
-        LEFT JOIN Tracks ON Albums_Tracks.track_id = Tracks.id
-        LEFT JOIN Artists_Tracks ON Tracks.id = Artists_Tracks.track_id
-        LEFT JOIN Artists ON Artists_Tracks.artist_id = Artists.id
-        WHERE Albums.id = ?
-        GROUP BY Albums.title, Albums.year_of_release, Albums.image;
-        `;
-        const [results, fields] = await connection.execute(query, values);
-            if (results.length === 0 || !results) {
-                response.status(404).json({ message: `Could not find album by specified ID: ${id}` });
-            } else {
-                response.status(200).json(results);
+        let albumData = {};
+        // get album data
+        const albumQuery = "SELECT * FROM albums WHERE id = ?";
+        const [albumResults] = await connection.execute(albumQuery, [albumId]);
+        if (albumResults.length === 0 || !albumResults) {
+            response.status(404).json({ message: `Could not find album by specified ID: ${albumId}` });
+            return
+        }
+        albumData = albumResults[0];
+
+        // get artist associated with album
+        const albumArtists = await getAssociatedIds("artists_albums", "artist_id", "album_id", albumId);
+        for (const artist of albumArtists) {
+            const artistsQuery = "SELECT id, name FROM artists WHERE id = ?";
+            const [artistsResults] = await connection.execute(artistsQuery, [artist]);
+            console.log(artistsResults)
+            if (artistsResults.length === 0 || !artistsResults) {
+                response.status(404).json({ message: `Could not find artist by specified ID: ${artist}` });
+                return
             }
+            // add artist name and id to the album object
+            albumData.artists = artistsResults;
+        }
+
+        // get tracks associated with album
+        let tracks = [];
+        const albumTracks = await getAssociatedIds("albums_tracks", "track_id", "album_id", albumId);
+            for (const track of albumTracks) {
+                const tracksQuery = "SELECT * FROM tracks WHERE id = ?";
+                const [tracksResults] = await connection.execute(tracksQuery, [track]);
+                if (tracksResults.length === 0 || !tracksResults) {
+                    response.status(404).json({ message: `Could not find track by specified ID: ${track}` });
+                    return
+                }
+
+                // get artists associated with tracks
+                const trackArtists = await getAssociatedIds("artists_tracks", "artist_id", "track_id", track);
+                for (const artist of trackArtists) {
+                    const artistsQuery = "SELECT name FROM artists WHERE id = ?";
+                    const [artistsResults] = await connection.execute(artistsQuery, [artist]);
+                    if (artistsResults.length === 0 || !artistsResults) {
+                        response.status(404).json({ message: `Could not find artist by specified ID: ${artist}` });
+                        return
+                    }
+                    // add artist name and id to the track object
+                    tracksResults[0].artists = artistsResults[0];
+                }
+                // add track as an object to tracks array
+                tracks.push(tracksResults[0]);
+            }
+
+        // add tracks and artists to album data
+        albumData.tracks = tracks;
+
+        // send album data
+        response.status(200).json(albumData);
     } catch (error) {
-        response.status(500).json({ message: "Internal server error" });
+        response.status(500).json(error.message);
     }
 }
 

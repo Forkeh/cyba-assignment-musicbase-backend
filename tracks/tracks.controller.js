@@ -1,5 +1,5 @@
 import connection from "../database/dbconfig.js";
-import { getAlbumsIDByName, getArtistsIDByName } from "../utils/utils.js";
+import {getAlbumsIDByName, getArtistsIDByName, getIdsByNameOrID} from "../utils/utils.js";
 import { deleteFromTable } from "../utils/utils.js";
 
 
@@ -76,30 +76,29 @@ async function searchTracks(req, res) {
 }
 
 async function createTrack(request, response) {
-    //request.body indeholder title STRING, duration INT, artists STRING ARR, albums STRING ARR
-    const {title, duration, artists, albums} = request.body;
+    const { title, duration, artists, albums } = request.body;
 
     if (!artists || artists.length === 0 || !albums || albums.length === 0) {
-        response.status(400).json({ message: "Include artists and/or albums" });
+        throw new Error("Artists and albums must be provided");
     }
 
+    // Ensure artists and albums are always arrays
+    const artistsArray = Array.isArray(artists) ? artists : [artists];
+    const albumsArray = Array.isArray(albums) ? albums : [albums];
+
+    // Get IDs for artists and albums using the utility function
+    const artistsId = await getIdsByNameOrID(artistsArray, "artists");
+    const albumsId = await getIdsByNameOrID(albumsArray, "albums");
+    console.log("artistsId and albumsId")
+    console.log(artistsId)
+    console.log(albumsId)
+
     try {
-        // Associate the track with artists and albums
-        const artistsId = await getArtistsIDByName(artists);
-        const albumsId = await getAlbumsIDByName(albums);
-
-        //Throw error if artists or albums do not exist in database
-        if (artistsId.length === 0) {
-            throw new Error("Artist not found");
-        } else if (albumsId.length === 0) {
-            throw new Error("Album not found");
-        }
-
-        // Create the track in the "tracks" table
-        const query = `INSERT INTO tracks(title, duration) VALUES (?,?)`;
+        // Create the track in tracks table
+        const query = `INSERT INTO tracks(title, duration) VALUES (?, ?)`;
         const values = [title, duration];
-        const result = await connection.execute(query, values);
-        const trackId = result[0].insertId;
+        const [result] = await connection.execute(query, values);
+        const trackId = result.insertId;
 
         // Call the function to create associations
         await createTrackInTable("artists_tracks", "artist_id", artistsId, trackId, response);
@@ -107,7 +106,6 @@ async function createTrack(request, response) {
 
         response.status(201).json({ message: "Track created" });
     } catch (error) {
-
         if (error.message) {
             response.status(400).json({ message: `${error.message}` });
         } else {
@@ -115,7 +113,6 @@ async function createTrack(request, response) {
         }
     }
 }
-
 async function createTrackInTable(tableName, idColumnName, id, trackId, res) {
     try {
         const query = `INSERT INTO ${tableName}(${idColumnName}, track_id) VALUES (?, ?)`;
@@ -130,6 +127,17 @@ async function createTrackInTable(tableName, idColumnName, id, trackId, res) {
 
 async function deleteTrack(req, res) {
     const id = req.params.id;
+    if (!id) {
+        throw new Error("Track ID must be provided");
+    }
+
+    // check if track exists in the database
+    const query = `SELECT * FROM tracks WHERE id = ?`;
+    const [results] = await connection.execute(query, [id]);
+    if (results.length === 0 || !results) {
+        res.status(404).json({ message: `Could not find track by specified ID: ${id}` });
+        return;
+    }
 
     try {
         // Delete associations with artists and albums
@@ -143,6 +151,10 @@ async function deleteTrack(req, res) {
 
         res.status(204).json();
     } catch (error) {
+        if (error.message) {
+            res.status(400).json({ message: `${error.message}` });
+            return;
+        }
         res.status(500).json({ message: "Internal server error at deleteTrack" });
     }
 }

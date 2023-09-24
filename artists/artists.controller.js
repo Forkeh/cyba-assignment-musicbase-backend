@@ -1,6 +1,13 @@
 import connection from "../database/dbconfig.js";
 import {createArtistAsync} from "../utils/createEverything.js";
-import {deleteFromAlbumsTracksTable, deleteFromTable, deleteOrphanedRecords, getAssociatedIds} from "../utils/utils.js";
+import {
+    deleteFromAlbumsTracksTable,
+    deleteFromTable,
+    deleteOrphanedRecords,
+    getAlbumsByArtistId,
+    getArtistsIDByName,
+    getAssociatedIds
+} from "../utils/utils.js";
 
 async function getAllArtists(request, response) {
     try {
@@ -9,7 +16,7 @@ async function getAllArtists(request, response) {
         response.status(200).json(results);
     }
     catch (error) {
-        response.status(500).json({ message: "Internal server error" });
+        response.status(500).json({ message: "Internal server error while getting all artists" });
     }
 }
 
@@ -24,28 +31,11 @@ async function getSingleArtist(request, response) {
         } else {
             response.status(200).json(results[0]);
         }
-
     }
     catch (error) {
-        response.status(500).json({ message: "Internal server error" });
+        response.status(500).json({ message: "Internal server error while getting artists by id" });
     }
 }
-
-// async function createArtist(request, response) {
-//     try {
-//         const {name, image} = request.body;
-//         const query = "INSERT INTO artists(name, image) VALUES (?,?)";
-//         const values = [name, image];
-//         const [results, fields] = await connection.execute(query, values);
-//         if (results.length === 0 || !results) {
-//             response.status(404).json({ message: `Could not create artist` });
-//         } else {
-//             response.status(201).json(results[0].insertId);
-//         }
-//     } catch (error) {
-//         response.status(500).json({ message: "Internal server error" });
-//     }
-// }
 
 async function createArtistEndpoint(request, response) {
     try {
@@ -76,18 +66,21 @@ async function updateArtist(request, response) {
             response.status(200).json(results);
         }
     } catch (error) {
-        response.status(500).json({ message: "Internal server error" });
+        response.status(500).json({ message: "Internal server error while updating artist" });
     }
 }
 
 async function deleteArtist(request, response) {
     const artistId = request.params.id;
+    console.log(artistId)
     try {
         // Get album IDs and track IDs associated with the artist
         const albumIds = await getAssociatedIds("artists_albums", "album_id", "artist_id", artistId);
         const trackIds = await getAssociatedIds("artists_tracks", "track_id", "artist_id", artistId);
-        console.log(albumIds)
-        console.log(trackIds)
+        if (albumIds.length === 0 && trackIds.length === 0) {
+            await removeArtist(artistId, response);
+            return;
+        }
         // Delete associations with tracks and albums
         await deleteFromTable("artists_albums", "artist_id", artistId);
         await deleteFromTable("artists_tracks", "track_id", trackIds);
@@ -98,77 +91,85 @@ async function deleteArtist(request, response) {
         await deleteOrphanedRecords("tracks", "track_id", trackIds);
 
         // Delete the artist
-        const query = "DELETE FROM artists WHERE id = ?";
-        const values = [artistId];
-        const [results, fields] = await connection.execute(query, values);
-        if (results.affectedRows === 0) {
-            response.status(404).json({
-                message: `Could not find artist by specified ID: ${artistId}`,
-            });
-        } else {
-            console.log("deleted artist")
-            response.status(204).json();
-        }
+        await removeArtist(artistId, response);
+
     } catch (error) {
         response.status(500).json({ message: "Internal server error - failed deleting " });
     }
 }
 
-async function getAllAlbumsByArtistName(request, response) {
+async function getAllAlbumsByArtist(req, res) {
+    let artistId;
+
+    if (req.params.artist.match(/^\d+$/)) {
+        // The artist parameter is a numeric string, convert it to a number
+        artistId = parseInt(req.params.artist, 10);
+    } else if (typeof req.params.artist === 'string') {
+        // Get artist id from name
+        artistId = await getArtistsIDByName([req.params.artist]);
+    } else {
+        res.status(400).json({ message: "Invalid artist" });
+    }
+
     try {
-        const searchValue = request.params.searchValue;
-        const query = /*sql*/`
-        WITH previous_result AS (
-        SELECT id AS id 
-        FROM artists 
-        WHERE name LIKE ?)
-        SELECT albums.title AS 'title', albums.year_of_release AS 'yearOfRelease', albums.image AS 'image', artists.name AS artist
-        FROM albums
-        INNER JOIN artists_albums ON albums.id = artists_albums.album_id
-        INNER JOIN artists ON artists_albums.artist_id = artists.id
-        INNER JOIN previous_result ON artists.id = previous_result.id;\
-        `;
-        const values = [`%${searchValue}%`];
-        const [results, fields] = await connection.execute(query, values);
-        if (results.length === 0 || !results) {
-            response.status(404).json({ message: `Could not find albums with specified artist with ID: ${id}` });
-        } else {
-            response.status(200).json(results);
-        }
+        // Call the reusable function to get albums by artistId
+        const albums = await getAlbumsByArtistId(artistId);
+
+        res.status(200).json(albums);
     } catch (error) {
-        response.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: "Internal server error while getting albums from specific artist" });
     }
 }
 
 async function searchArtists(request, response) {
     try {
-        const searchValue = request.params.searchValue;
-        const query = `
-        SELECT
-        Artists.name,
-        Artists.image,
-        GROUP_CONCAT(DISTINCT Albums.title ORDER BY Albums.title ASC SEPARATOR ', ') AS Albums,
-        GROUP_CONCAT(DISTINCT Tracks.title ORDER BY Tracks.title ASC SEPARATOR ', ') AS Tracks
-        FROM Artists
-        LEFT JOIN Artists_Albums ON Artists.id = Artists_Albums.artist_id
-        LEFT JOIN Albums ON Artists_Albums.album_id = Albums.id
-        LEFT JOIN Artists_Tracks ON Artists.id = Artists_Tracks.artist_id
-        LEFT JOIN Tracks ON Artists_Tracks.track_id = Tracks.id
-        WHERE name LIKE ?
-        GROUP BY Artists.name, Artists.image; 
-        `
-        const values = [`%${searchValue}%`]
+        let searchResults = [];
 
-        const [results, fields] = await connection.execute(query, values);
-        if (results.length === 0 || !results) {
-            response.status(404).json({ message: `Could not find artists with specified search value: ${searchValue}` });
-        } else {
-            response.status(200).json(results);
+        const searchValue = request.params.searchValue;
+        if ( !searchValue) {
+            response.status(400).json({ message: "no search value" });
+            return;
         }
+
+        const query = `SELECT * FROM Artists WHERE name LIKE ? `
+        const values = [`%${searchValue}%`]
+        const [results] = await connection.execute(query, values);
+
+        const artists = [];
+        const artistIds = [];
+        for (const result of results) {
+            artists.push(result);
+        }
+        if (artists.length === 0 || !artists) {
+            response.status(404).json({ message: `Search value: ${searchValue} did not result in any matches` });
+        } else {
+                for (const artist of artists) {
+                    const albums = await getAlbumsByArtistId(artist.id);
+                    const artistObject = {
+                        id: artist.id,
+                        name: artist.name,
+                        image: artist.image,
+                        albums: albums
+                    }
+                searchResults.push(artistObject);
+                }
+        }
+        response.status(200).json(searchResults);
     } catch (error) {
         response.status(500).json({ message: "Internal server error" });
     }
 }
 
-export {getSingleArtist, getAllArtists, createArtistEndpoint, updateArtist, deleteArtist, getAllAlbumsByArtistName, searchArtists }
+async function removeArtist(artistId, response) {
+    const query = "DELETE FROM artists WHERE id = ?";
+    const values = [artistId];
+    const [results, fields] = await connection.execute(query, values);
+    if (results.affectedRows === 0) {
+        response.status(404).json({ message: `Could not find artist by specified ID: ${artistId}` });
+    } else {
+        response.status(200).json({ message: `Successfully deleted artist with ID: ${artistId}` });
+    }
+}
+
+export {getSingleArtist, getAllArtists, createArtistEndpoint, updateArtist, deleteArtist, getAllAlbumsByArtist, searchArtists }
 

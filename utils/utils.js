@@ -75,6 +75,23 @@ async function searchAll(request, response) {
     }
 }
 
+async function getAlbumTracks(albumId) {
+    if (albumId === undefined) {
+        throw new Error('albumId is undefined');
+    }
+    try {
+       const albumTracks = await getAssociatedIds('albums_tracks', 'track_id', 'album_id', albumId)
+       if (albumTracks.length === 0) {
+           throw new Error('No tracks found for album');
+       } else {
+              return albumTracks;
+       }
+    } catch (error) {
+        throw error.message
+    }
+}
+
+
 async function deleteFromTable(tableName, columnName, ids) {
     if (!Array.isArray(ids)) {
         ids = [ids];
@@ -88,7 +105,8 @@ async function deleteFromTable(tableName, columnName, ids) {
         console.log(`query: ${query}`)
         const values = [...ids];
         console.log(`values: ${values}`)
-        await connection.execute(query, values);
+        const [results] = await connection.execute(query, values);
+        console.log(`Deleted ${results.affectedRows} rows from ${tableName}`)
     } catch (error) {
         throw error.message(`Internal server error while deleting from ${tableName}`);
     }
@@ -155,7 +173,9 @@ async function deleteOrphanedRecords(tableName, columnName, ids) {
 async function getAssociatedIds(tableName, columnName, conditionColumn, id) {
     try {
         const query = `SELECT ${columnName} FROM ${tableName} WHERE ${conditionColumn} = ?`;
-        const [results] = await connection.execute(query, [id]);
+        const values = [id];
+        const [results] = await connection.execute(query, values);
+
         const mappedResults =  results.map((result) => result[columnName]);
         if (Array.isArray(mappedResults)) {
             return mappedResults;
@@ -168,4 +188,97 @@ async function getAssociatedIds(tableName, columnName, conditionColumn, id) {
     }
 }
 
-export { getAlbumsIDByName, getArtistsIDByName, searchAll, deleteFromTable, deleteOrphanedRecords, getAssociatedIds, deleteFromAlbumsTracksTable };
+async function getAlbumsByArtistId(artistId) {
+    const albumIds = await getAssociatedIds("artists_albums", "album_id", "artist_id", artistId);
+
+    // Initialize an array to store album objects
+    const albums = [];
+
+    // Fetch album information for each album ID
+    for (const albumId of albumIds) {
+        const albumQuery = "SELECT * FROM albums WHERE id = ?";
+        const albumValues = [albumId];
+        const [albumResult] = await connection.execute(albumQuery, albumValues);
+
+        if (albumResult.length > 0) {
+            const album = albumResult[0];
+            // Fetch track information for each track ID
+            const trackIds = await getAssociatedIds("albums_tracks", "track_id", "album_id", albumId);
+            let tracks = [];
+            let trackArtists = [];
+
+            for (const trackId of trackIds) {
+                const trackQuery = "SELECT * FROM tracks WHERE id = ?";
+                const trackValues = [trackId];
+                const [trackResult] = await connection.execute(trackQuery, trackValues);
+
+                if (trackResult.length > 0) {
+                    tracks.push(trackResult[0]);
+                    // Fetch artist information for each track
+                    const artistIds = await getAssociatedIds("artists_tracks", "artist_id", "track_id", trackId);
+                    for (const artistId of artistIds) {
+                        const artistQuery = "SELECT name FROM artists WHERE id = ?";
+                        const artistValues = [artistId];
+                        const [artistResult] = await connection.execute(artistQuery, artistValues);
+                        const artistNames = artistResult[0].name;
+
+                        if (!trackArtists.includes(artistNames)) {
+                            trackArtists.push(artistNames);
+                        }
+                    }
+                }
+            }
+
+            // Create an array of track objects for the album
+            const trackObjects = tracks.map(track => ({
+                title: track.title,
+                duration: track.duration,
+                artists: trackArtists,
+            }));
+            // Create an album object and add it to the albums array
+            const albumObject = {
+                title: album.title,
+                yearOfRelease: album.year_of_release,
+                image: album.image,
+                artist: artistId,
+                tracks: trackObjects,
+            };
+            albums.push(albumObject);
+        }
+    }
+    return albums;
+}
+
+async function getIdsByNameOrID(namesOrIDs, tableName) {
+    let query;
+    if (tableName === 'artists') {
+        query = `SELECT id FROM ${tableName} WHERE name = ? OR id = ?`;
+    console.log(`getIdsByNameOrID query: ${query}`)
+    } else if (tableName === 'albums') {
+        query = `SELECT id FROM ${tableName} WHERE title = ? OR id = ?`;
+    console.log(`getIdsByNameOrID query: ${query}`)
+    }
+    const ids = [];
+
+    for (const nameOrID of namesOrIDs) {
+        const [results] = await connection.execute(query, [nameOrID, nameOrID]);
+        if (results.length === 0) {
+            throw new Error(`Could not find ${tableName.slice(0, -1)} by specified name or ID: ${nameOrID}`);
+        }
+        ids.push(results[0].id);
+    }
+    return ids;
+}
+
+export {
+    getAlbumsIDByName,
+    getArtistsIDByName,
+    searchAll,
+    deleteFromTable,
+    deleteOrphanedRecords,
+    getAssociatedIds,
+    deleteFromAlbumsTracksTable,
+    getAlbumTracks,
+    getAlbumsByArtistId,
+    getIdsByNameOrID
+};
