@@ -65,7 +65,7 @@ async function createAlbum(request, response) {
     //Request.body: title: string, yearOfRelease: int, image: string, artist: string | int
     //TODO: Vi antager at artist: [string eller int]
     
-    const { title, yearOfRelease, image, artist: artists } = request.body;
+    const { title, yearOfRelease, image, artists } = request.body;
     let artistIdArr;
 
     if (!artists || !title || !yearOfRelease || !image) {
