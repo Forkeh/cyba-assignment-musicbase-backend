@@ -1,5 +1,5 @@
 import express from "express";
-import { createArtistEndpoint, deleteArtist, getAllAlbumsByArtistName, getAllArtists, getSingleArtist, updateArtist, searchArtists } from "./artists.controller.js";
+import { createArtistEndpoint, deleteArtist, getAllAlbumsByArtist, getAllArtists, getSingleArtist, updateArtist, searchArtists } from "./artists.controller.js";
 
 const artistRouter = express.Router();
 
@@ -16,8 +16,8 @@ artistRouter.route("/artists/:id")
 artistRouter.route("/artists/search/:searchValue")
     .get(searchArtists);
 
-artistRouter.route("/artists/albums/:searchValue")
-    .get(getAllAlbumsByArtistName);
+artistRouter.route("/artists/albums/:artist")
+    .get(getAllAlbumsByArtist);
 
 
 export default artistRouter
