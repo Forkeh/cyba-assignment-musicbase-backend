@@ -111,10 +111,6 @@ async function getAllAlbumsByArtist(req, res) {
         res.status(400).json({ message: "Invalid artist" });
     }
 
-    //!: De 2 nedenstående linjer bliver ikke anvendt til routens endelige mål. [artistName] bliver aldrig brugt.
-    const artistNameQuery = "SELECT name FROM artists WHERE id = ?";
-    const [artistName] = await connection.execute(artistNameQuery, [artistId]);
-
     try {
         // Call the reusable function to get albums by artistId
         const albums = await getAlbumsByArtistId(artistId);
