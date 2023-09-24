@@ -105,7 +105,8 @@ async function deleteFromTable(tableName, columnName, ids) {
         console.log(`query: ${query}`)
         const values = [...ids];
         console.log(`values: ${values}`)
-        await connection.execute(query, values);
+        const [results] = await connection.execute(query, values);
+        console.log(`Deleted ${results.affectedRows} rows from ${tableName}`)
     } catch (error) {
         throw error.message(`Internal server error while deleting from ${tableName}`);
     }
@@ -245,8 +246,28 @@ async function getAlbumsByArtistId(artistId) {
             albums.push(albumObject);
         }
     }
-
     return albums;
+}
+
+async function getIdsByNameOrID(namesOrIDs, tableName) {
+    let query;
+    if (tableName === 'artists') {
+        query = `SELECT id FROM ${tableName} WHERE name = ? OR id = ?`;
+    console.log(`getIdsByNameOrID query: ${query}`)
+    } else if (tableName === 'albums') {
+        query = `SELECT id FROM ${tableName} WHERE title = ? OR id = ?`;
+    console.log(`getIdsByNameOrID query: ${query}`)
+    }
+    const ids = [];
+
+    for (const nameOrID of namesOrIDs) {
+        const [results] = await connection.execute(query, [nameOrID, nameOrID]);
+        if (results.length === 0) {
+            throw new Error(`Could not find ${tableName.slice(0, -1)} by specified name or ID: ${nameOrID}`);
+        }
+        ids.push(results[0].id);
+    }
+    return ids;
 }
 
 export {
@@ -258,5 +279,6 @@ export {
     getAssociatedIds,
     deleteFromAlbumsTracksTable,
     getAlbumTracks,
-    getAlbumsByArtistId
+    getAlbumsByArtistId,
+    getIdsByNameOrID
 };
