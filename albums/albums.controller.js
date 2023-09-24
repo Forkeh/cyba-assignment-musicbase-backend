@@ -63,6 +63,7 @@ async function searchAlbums(request, response) {
 
 async function createAlbum(request, response) {
     //Request.body: title: string, yearOfRelease: int, image: string, artist: string | int
+    //! CreateAlbum antages kun at tage imod en enkelt artist. Dette vil sige, at album har en many-to-one relation til artists.
     const { title, yearOfRelease, image, artist } = request.body;
     let artistId;
 
