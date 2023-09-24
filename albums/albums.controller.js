@@ -63,21 +63,28 @@ async function searchAlbums(request, response) {
 
 async function createAlbum(request, response) {
     //Request.body: title: string, yearOfRelease: int, image: string, artist: string | int
-    //! CreateAlbum antages kun at tage imod en enkelt artist. Dette vil sige, at album har en many-to-one relation til artists.
-    const { title, yearOfRelease, image, artist } = request.body;
-    let artistId;
+    //TODO: Vi antager at artist: [string eller int]
+    
+    const { title, yearOfRelease, image, artist: artists } = request.body;
+    let artistIdArr;
 
-    if (!artist || !title || !yearOfRelease || !image) {
+    if (!artists || !title || !yearOfRelease || !image) {
         throw new Error("Missing required parameters");
-    } else if (artist.match(/^\d+$/)) {
-        // The artist parameter is a numeric string, convert it to a number
-        artistId = parseInt(artist, 10);
-    } else if (typeof artist === "string") {
-        // Get artist id from name
-        artistId = await getArtistsIDByName([artist]);
-    } else {
-        throw new Error("Invalid artist");
     }
+
+    for (const artistID of artists) {
+        
+        if (artistID.match(/^\d+$/)) {
+            // The artist parameter is a numeric string, convert it to a number
+            artistIdArr = parseInt(artistID, 10);
+        } else if (typeof artistID === "string") {
+            // Get artist id from name
+            artistIdArr = await getArtistsIDByName([artistID]);
+        } else {
+            throw new Error("Invalid artist");
+        }
+    }
+    
 
     try {
         const values = [title, yearOfRelease, image];
@@ -88,7 +95,7 @@ async function createAlbum(request, response) {
         }
         const albumID = results.insertId;
 
-        await createAlbumInTable("artists_albums", "artist_id", artistId, albumID, response);
+        await createAlbumInTable("artists_albums", "artist_id", artistIdArr, albumID, response);
 
         response.status(201).json({ message: "Album created" });
     } catch (error) {
