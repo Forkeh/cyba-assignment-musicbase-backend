@@ -17,7 +17,7 @@ async function getAllTracks(req, res) {
         LEFT JOIN Artists ON Artists_Tracks.artist_id = Artists.id
         LEFT JOIN Albums_Tracks ON Tracks.id = Albums_Tracks.track_id
         LEFT JOIN Albums ON Albums_Tracks.album_id = Albums.id
-        GROUP BY Tracks.title, Tracks.duration;
+        GROUP BY Tracks.title, Tracks.duration, Tracks.id;
         `;
         const [results, fields] = await connection.execute(query);
         if (results.length === 0 || !results) {
