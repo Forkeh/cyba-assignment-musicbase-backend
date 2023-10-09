@@ -7,6 +7,7 @@ async function getAllTracks(req, res) {
     try {
         const query = `
         SELECT
+        Tracks.id AS id,
         Tracks.title,
         Tracks.duration,
         GROUP_CONCAT(DISTINCT Artists.name ORDER BY Artists.name ASC SEPARATOR ', ') AS artists,
