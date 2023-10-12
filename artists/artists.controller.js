@@ -1,4 +1,5 @@
 import connection from "../database/dbconfig.js";
+import * as Sentry from "@sentry/node";
 import {createArtistAsync} from "../utils/createEverything.js";
 import {
     deleteFromAlbumsTracksTable,
@@ -11,12 +12,15 @@ import {
 
 async function getAllArtists(request, response) {
     try {
+        throw new Error("Get all artists error");
         const query = "SELECT * FROM artists";
         const [results, fields] = await connection.execute(query);
         response.status(200).json(results);
     }
     catch (error) {
-        response.status(500).json({ message: "Internal server error while getting all artists" });
+        //Relevant for Sentry. Bruges når den skal vises i Sentry, når fejlen opstår i en try-catch
+        Sentry.captureException(error);
+        response.status(500).json({ message: error.message });
     }
 }
 
