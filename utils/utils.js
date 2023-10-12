@@ -253,10 +253,8 @@ async function getIdsByNameOrID(namesOrIDs, tableName) {
     let query;
     if (tableName === 'artists') {
         query = `SELECT id FROM ${tableName} WHERE name = ? OR id = ?`;
-    console.log(`getIdsByNameOrID query: ${query}`)
     } else if (tableName === 'albums') {
         query = `SELECT id FROM ${tableName} WHERE title = ? OR id = ?`;
-    console.log(`getIdsByNameOrID query: ${query}`)
     }
     const ids = [];
 

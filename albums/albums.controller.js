@@ -124,15 +124,18 @@ async function createAlbumInTable(tableName, idColumnName, id, albumId) {
 
 async function updateAlbum(request, response) {
     try {
+        console.log(request.body)
+        console.log(request.params.id)
         const {title, yearOfRelease, image} = request.body;
         const id = request.params.id;
         const query = "UPDATE albums SET title = ?, year_of_release = ?, image = ? WHERE id = ?";
         const values = [title, yearOfRelease, image, id];
         const [results, fields] = await connection.execute(query, values);
+        console.log(results[0])
         if (results.length === 0 || !results) {
             response.status(404).json({ message: `Could not find album by specified ID: ${id}` });
         } else {
-            response.status(200).json(results[0]);
+            response.status(200).json({message: `Successfully updated album with ID: ${id}`});
         }
     } catch (error) {
         response.status(500).json({ message: "Internal server error" });
@@ -158,7 +161,7 @@ async function deleteAlbum(request, response) {
         const query = "DELETE FROM albums WHERE id = ?";
         await connection.execute(query, [albumID]);
 
-        response.status(204).json();
+        response.status(200).json({ message: `Successfully deleted album with ID: ${albumID}` });
     } catch (error) {
         response.status(500).json({ message: "Internal server error in deleteAlbum" });
     }
@@ -173,7 +176,7 @@ async function getAllAlbumDataByAlbumID(request, response) {
     try {
         let albumData = {};
         // get album data
-        const albumQuery = "SELECT * FROM albums WHERE id = ?";
+        const albumQuery = "SELECT id, title, year_of_release AS yearOfRelease, image FROM albums WHERE id = ?";
         const [albumResults] = await connection.execute(albumQuery, [albumId]);
         if (albumResults.length === 0 || !albumResults) {
             response.status(404).json({ message: `Could not find album by specified ID: ${albumId}` });
