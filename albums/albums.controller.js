@@ -211,15 +211,17 @@ async function getAllAlbumDataByAlbumID(request, response) {
 
                 // get artists associated with tracks
                 const trackArtists = await getAssociatedIds("artists_tracks", "artist_id", "track_id", track);
+        
+                tracksResults[0].artists = [];
                 for (const artist of trackArtists) {
-                    const artistsQuery = "SELECT name FROM artists WHERE id = ?";
+                    const artistsQuery = "SELECT name, id FROM artists WHERE id = ?";
                     const [artistsResults] = await connection.execute(artistsQuery, [artist]);
                     if (artistsResults.length === 0 || !artistsResults) {
                         response.status(404).json({ message: `Could not find artist by specified ID: ${artist}` });
                         return
                     }
                     // add artist name and id to the track object
-                    tracksResults[0].artists = artistsResults[0];
+                    tracksResults[0].artists.push(artistsResults[0]);
                 }
                 // add track as an object to tracks array
                 tracks.push(tracksResults[0]);
