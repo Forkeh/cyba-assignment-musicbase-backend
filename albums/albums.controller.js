@@ -63,6 +63,7 @@ async function searchAlbums(request, response) {
 
 async function createAlbum(request, response) {
     //Request.body: title: string, yearOfRelease: int, image: string, artist: string[] | string | int[] | int
+    console.log(request.body);
     const { title, yearOfRelease, image, artists } = request.body;
 
     // Check if required parameters are missing
@@ -88,7 +89,7 @@ async function createAlbum(request, response) {
         // Create associations with artists
         await createAlbumInTable("artists_albums", "artist_id", artistIdArr, albumID, response);
 
-        response.status(201).json({ message: "Album created" });
+        response.status(201).json(albumID);
     } catch (error) {
         if (error.message) {
             response.status(400).json({ message: `${error.message}` });
