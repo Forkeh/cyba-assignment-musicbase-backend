@@ -124,13 +124,31 @@ async function createAlbumInTable(tableName, idColumnName, id, albumId) {
 
 async function updateAlbum(request, response) {
     try {
+        const {title, yearOfRelease, image, artists} = request.body;
         console.log(request.body)
-        console.log(request.params.id)
-        const {title, yearOfRelease, image} = request.body;
         const id = request.params.id;
-        const query = "UPDATE albums SET title = ?, year_of_release = ?, image = ? WHERE id = ?";
+        if (!title || !yearOfRelease || !image || !artists) {
+            throw new Error("Missing required parameters");
+        }
+        // Ensure artists is always an array
+        const artistsArray = Array.isArray(artists) ? artists : [artists];
+        // Get artist IDs
+        const artistIds = await getIdsByNameOrID(artistsArray, "artists");
+
+        // Check if album exists
+        const albumQuery = "SELECT * FROM albums WHERE id = ?";
+        const [albumResults] = await connection.execute(albumQuery, [id]);
+        if (albumResults.length === 0 || !albumResults) {
+            throw new Error(`Could not find album by specified ID: ${id}`);
+        }
+
+        // Update associations with artists
+        await updateAlbumsInTable("artists_albums", "artist_id", artistIds, id);
+
+        // Update album
+        const updateAlbumQuery = "UPDATE albums SET title = ?, year_of_release = ?, image = ? WHERE id = ?";
         const values = [title, yearOfRelease, image, id];
-        const [results, fields] = await connection.execute(query, values);
+        const [results, fields] = await connection.execute(updateAlbumQuery, values);
         console.log(results[0])
         if (results.length === 0 || !results) {
             response.status(404).json({ message: `Could not find album by specified ID: ${id}` });
@@ -138,7 +156,7 @@ async function updateAlbum(request, response) {
             response.status(200).json({message: `Successfully updated album with ID: ${id}`});
         }
     } catch (error) {
-        response.status(500).json({ message: "Internal server error" });
+        response.status(500).json({ message: `${error.message}` });
     }
 }
 
@@ -234,6 +252,21 @@ async function getAllAlbumDataByAlbumID(request, response) {
         response.status(200).json(albumData);
     } catch (error) {
         response.status(500).json(error.message);
+    }
+}
+
+async function updateAlbumsInTable (tableName, idColumnName, idArr, albumId) {
+    try {
+        const query = `UPDATE ${tableName} SET ${idColumnName} = ? WHERE album_id = ?`;
+        for (const itemID of idArr) {
+            const values = [itemID, albumId];
+            const [results] = await connection.query(query, values);
+            if (results.affectedRows === 0 || !results) {
+                throw new Error(`Could not create album in ${tableName}`);
+            }
+        }
+    } catch (error) {
+        throw error.message;
     }
 }
 
