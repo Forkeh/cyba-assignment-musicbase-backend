@@ -144,7 +144,14 @@ async function updateAlbum(request, response) {
         }
 
         // Update associations with artists
+        if (artistIds.length === 1) {
         await updateAlbumsInTable("artists_albums", "artist_id", artistIds, id);
+        } else {
+            // delete old associations
+            await deleteFromTable("artists_albums", "album_id", id, response);
+            // create new associations
+            await createAlbumInTable("artists_albums", "artist_id", artistIds, id);
+        }
 
         // Update album
         const updateAlbumQuery = "UPDATE albums SET title = ?, year_of_release = ?, image = ? WHERE id = ?";
@@ -202,19 +209,19 @@ async function getAllAlbumDataByAlbumID(request, response) {
             return
         }
         albumData = albumResults[0];
-
+        albumData.artists = [];
         // get artist associated with album
         const albumArtists = await getAssociatedIds("artists_albums", "artist_id", "album_id", albumId);
         for (const artist of albumArtists) {
             const artistsQuery = "SELECT id, name FROM artists WHERE id = ?";
-            const [artistsResults] = await connection.execute(artistsQuery, [artist]);
+            const [[artistsResults]] = await connection.execute(artistsQuery, [artist]);
             console.log(artistsResults)
             if (artistsResults.length === 0 || !artistsResults) {
                 response.status(404).json({ message: `Could not find artist by specified ID: ${artist}` });
                 return
             }
             // add artist name and id to the album object
-            albumData.artists = artistsResults;
+            albumData.artists.push(artistsResults);
         }
 
         // get tracks associated with album
