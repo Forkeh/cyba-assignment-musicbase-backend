@@ -143,15 +143,10 @@ async function updateAlbum(request, response) {
             throw new Error(`Could not find album by specified ID: ${id}`);
         }
 
-        // Update associations with artists
-        if (artistIds.length === 1) {
-        await updateAlbumsInTable("artists_albums", "artist_id", artistIds, id);
-        } else {
-            // delete old associations
-            await deleteFromTable("artists_albums", "album_id", id, response);
-            // create new associations
-            await createAlbumInTable("artists_albums", "artist_id", artistIds, id);
-        }
+        // Delete associations with artists
+        await deleteFromTable("artists_albums", "album_id", id, response);
+        // Create associations with artists
+        await createAlbumInTable("artists_albums", "artist_id", artistIds, id, response);
 
         // Update album
         const updateAlbumQuery = "UPDATE albums SET title = ?, year_of_release = ?, image = ? WHERE id = ?";
