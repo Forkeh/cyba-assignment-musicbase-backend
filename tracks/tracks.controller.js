@@ -177,12 +177,12 @@ async function deleteTrack(req, res) {
 //Update track
 async function updateTrack(req, res) {
     try {
-       // get track id from params
-    const id = req.params.id;
+        // get track id from params
+        const id = req.params.id;
         console.log(id)
 
         // get track title and duration as well as artist name or id and album title or id from body
-    const {title, duration, artists, albums} = req.body;
+        const {title, duration, artists, albums} = req.body;
 
         // Ensure artists and albums are always arrays
         const artistsArray = Array.isArray(artists) ? artists : [artists];
@@ -207,26 +207,18 @@ async function updateTrack(req, res) {
         console.log(`query: ${updateTrackQuery}, values: ${updateTrackValues}`);
         const updateTrackResult = await connection.query(updateTrackQuery, updateTrackValues);
 
-        // update associations
-        await updateTrackInTable("artists_tracks", "artist_id", artistsId, id, res);
-        await updateTrackInTable("albums_tracks", "album_id", albumsId, id, res);
+        // Delete artist and album associations
+        await deleteFromTable("artists_tracks", "track_id", id);
+        await deleteFromTable("albums_tracks", "track_id", id);
+
+        // Create new associations
+        await createTrackInTable("artists_tracks", "artist_id", artistsId, id, res);
+        await createTrackInTable("albums_tracks", "album_id", albumsId, id, res);
+
 
         res.status(200).json({ message: `Successfully updated track with ID: ${id}` });
     } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
-    }
-}
-
-async function updateTrackInTable(tableName, idColumnName, id, trackId, res) {
-    try {
-        const query = `UPDATE ${tableName} SET ${idColumnName} = ? WHERE track_id = ?`;
-        const values = [id, trackId];
-        const [result] = await connection.query(query, values);
-        if (result.affectedRows === 0) {
-            throw new Error(`Could not update ${tableName} with ID: ${id}`);
-        }
-    } catch (error) {
-        res.status(500).json({ message: `Internal server error at updateTrackIn${tableName}` });
+        res.status(500).json({ message: `${error.message}` });
     }
 }
 
