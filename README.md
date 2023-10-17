@@ -38,7 +38,7 @@ DB_PASSWORD='your_password'
 To run the server, type the following in the terminal:
 
 ```bash
-npm install
+npm start
 ```
 
 In your browser, navigate to [localhost:3000](127.0.0.1:3000) and you should recieve the following message, if the server is running correctly:
